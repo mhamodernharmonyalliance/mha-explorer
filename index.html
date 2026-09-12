@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MHA Explorer — حيث العلم يُنشر</title>
+<meta name="description" content="MHA Explorer — موقع أكاديمي لنشر المذكرات والملخصات. حيث العلم يُنشر.">
+<style>
+  /* ===== المتغيرات ===== */
+  :root {
+    --navy: #1B3A5C;
+    --gold: #D4A93C;
+    --ink: #1A1A1A;
+    --paper: #F5F0E6;
+    --crimson: #B22222;
+    --border: rgba(212, 169, 60, 0.35);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'Noto Serif', 'Noto Serif SC', serif;
+    background: var(--paper);
+    color: var(--ink);
+    min-height: 100vh;
+    line-height: 1.8;
+    padding-bottom: 90px;
+    background-image:
+      radial-gradient(circle at 15% 20%, rgba(27,58,92,0.04) 0%, transparent 45%),
+      radial-gradient(circle at 85% 80%, rgba(212,169,60,0.06) 0%, transparent 45%);
+  }
+
+  /* ===== الترويسة ===== */
+  .header {
+    text-align: center;
+    padding: 40px 20px 26px;
+    border-bottom: 1px solid var(--border);
+    position: relative;
+  }
+  .header::after {
+    content: "";
+    display: block;
+    width: 60px;
+    height: 2px;
+    background: var(--gold);
+    margin: 22px auto 0;
+  }
+  .logo {
+    width: 140px;
+    height: 140px;
+    object-fit: contain;
+    filter: drop-shadow(0 4px 10px rgba(27,58,92,0.25));
+    transition: transform 0.6s ease;
+  }
+  .logo:hover { transform: scale(1.04); }
+  .site-title {
+    font-size: 2rem;
+    color: var(--navy);
+    margin-top: 12px;
+    letter-spacing: 3px;
+    font-weight: 700;
+  }
+  .site-tagline {
+    font-size: 1.1rem;
+    color: var(--crimson);
+    letter-spacing: 2px;
+    margin-top: 6px;
+  }
+  .site-sub {
+    font-size: 0.85rem;
+    color: #666;
+    letter-spacing: 2px;
+    margin-top: 6px;
+    font-family: 'Noto Sans', sans-serif;
+  }
+
+  /* ===== الحاوية ===== */
+  .container {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 30px 20px 60px;
+  }
+
+  /* ===== البطاقات ===== */
+  .card {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 24px;
+    margin-bottom: 22px;
+    box-shadow: 0 2px 8px rgba(27,58,92,0.05);
+    position: relative;
+    overflow: hidden;
+  }
+  .card::before {
+    content: "";
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 18px;
+    height: 18px;
+    border-top: 1px solid var(--gold);
+    border-right: 1px solid var(--gold);
+  }
+  /* العلامة المائية MHA */
+  .card::after {
+    content: "MHA";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-family: 'Noto Serif', serif;
+    font-size: 120px;
+    font-weight: 700;
+    color: var(--gold);
+    opacity: 0.05;
+    pointer-events: none;
+    z-index: 0;
+    letter-spacing: 8px;
+  }
+  .card > * { position: relative; z-index: 1; }
+
+  .card h2 {
+    font-size: 1.05rem;
+    color: var(--navy);
+    margin-bottom: 14px;
+    letter-spacing: 1px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card h2::before {
+    content: "◆";
+    color: var(--gold);
+    font-size: 0.7rem;
+  }
+
+  /* ===== النص الوصفي ===== */
+  .service-desc {
+    text-align: center;
+    color: #555;
+    font-size: 0.98rem;
+    line-height: 2;
+    padding: 4px 0;
+  }
+  .service-desc strong { color: var(--navy); }
+
+  /* ===== الحقول ===== */
+  .field { margin-bottom: 16px; }
+  .field label {
+    display: block;
+    color: var(--navy);
+    font-size: 0.9rem;
+    margin-bottom: 6px;
+    letter-spacing: 1px;
+  }
+  .field label::before {
+    content: "◆ ";
+    color: var(--gold);
+    font-size: 0.7rem;
+  }
+  .field input,
+  .field textarea {
+    width: 100%;
+    padding: 12px 14px;
+    background: #FDFBF6;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    font-family: inherit;
+    font-size: 1rem;
+    color: var(--ink);
+    transition: all 0.3s ease;
+    resize: vertical;
+  }
+  .field input:focus,
+  .field textarea:focus {
+    outline: none;
+    border-color: var(--navy);
+    box-shadow: 0 0 0 3px rgba(212,169,60,0.15);
+  }
+  .field textarea { min-height: 100px; }
+
+  /* ===== الأزرار ===== */
+  .btn {
+    display: block;
+    width: 100%;
+    padding: 14px 22px;
+    background: var(--navy);
+    color: var(--paper);
+    border: 1px solid var(--gold);
+    border-radius: 3px;
+    font-family: inherit;
+    font-size: 1rem;
+    cursor: pointer;
+    letter-spacing: 2px;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    text-align: center;
+  }
+  .btn:hover {
+    background: var(--gold);
+    color: var(--navy);
+  }
+  .btn:disabled,
+  .btn.disabled {
+    background: #ccc;
+    color: #777;
+    border-color: #aaa;
+    cursor: not-allowed;
+  }
+  .btn.disabled:hover {
+    background: #ccc;
+    color: #777;
+  }
+  .copy-msg {
+    color: var(--gold);
+    font-weight: 700;
+    margin-right: 12px;
+    display: none;
+    font-size: 0.9rem;
+  }
+
+  /* ===== عنوان العقد ===== */
+  .contract-addr {
+    background: #FDFBF6;
+    border: 1px dashed var(--border);
+    border-radius: 3px;
+    padding: 14px;
+    text-align: center;
+    font-family: 'Courier New', monospace;
+    font-size: 0.95rem;
+    color: var(--navy);
+    letter-spacing: 1px;
+    margin-bottom: 12px;
+    word-break: break-all;
+  }
+
+  /* ===== التنبيه ===== */
+  .legal-notice {
+    background: #FBF6EC;
+    border: 1px dashed var(--crimson);
+    border-radius: 4px;
+    padding: 16px 20px;
+    margin-bottom: 22px;
+    color: var(--crimson);
+    font-size: 0.9rem;
+    line-height: 1.9;
+    text-align: center;
+  }
+  .legal-notice strong { display: block; margin-bottom: 6px; letter-spacing: 2px; }
+
+  /* ===== الحقول القابلة للفتح ===== */
+  details {
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    margin-bottom: 10px;
+    background: #fff;
+    overflow: hidden;
+  }
+  details summary {
+    cursor: pointer;
+    padding: 14px 18px;
+    color: var(--navy);
+    font-weight: 600;
+    letter-spacing: 1px;
+    list-style: none;
+    position: relative;
+    transition: background 0.3s ease;
+  }
+  details summary::after {
+    content: "＋";
+    position: absolute;
+    left: 18px;
+    color: var(--gold);
+    font-weight: 700;
+    transition: transform 0.3s ease;
+  }
+  details[open] summary::after { content: "－"; }
+  details summary:hover { background: #FBF6EC; }
+  details > div {
+    padding: 6px 22px 18px;
+    color: #333;
+    font-size: 0.92rem;
+    border-top: 1px solid var(--border);
+    line-height: 1.9;
+  }
+
+  /* ===== الفوتر ===== */
+  footer {
+    text-align: center;
+    padding: 30px 20px 100px;
+    color: #888;
+    font-size: 0.82rem;
+    border-top: 1px solid var(--border);
+  }
+  footer .seal {
+    color: var(--crimson);
+    font-size: 1.3rem;
+    display: block;
+    margin-bottom: 8px;
+  }
+
+  /* ===== الصفحات ===== */
+  .page { display: none; animation: fadeIn 0.4s ease; }
+  .page.active { display: block; }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ===== زر الترقيم في المنتصف ===== */
+  .page-toggle {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 50px;
+    height: 50px;
+    background: var(--gold);
+    color: var(--navy);
+    border: 2px solid var(--navy);
+    border-radius: 50%;
+    font-family: inherit;
+    font-size: 1.2rem;
+    font-weight: 700;
+    cursor: pointer;
+    z-index: 200;
+    box-shadow: 0 4px 12px rgba(27,58,92,0.25);
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .page-toggle:hover {
+    transform: translateX(-50%) scale(1.08);
+    background: var(--navy);
+    color: var(--gold);
+  }
+
+  /* ===== زر العودة للأعلى ===== */
+  .to-top {
+    position: fixed;
+    bottom: 24px;
+    left: 24px;
+    width: 44px;
+    height: 44px;
+    background: var(--paper);
+    color: var(--gold);
+    border: 1px solid var(--gold);
+    border-radius: 50%;
+    cursor: pointer;
+    z-index: 150;
+    font-size: 1rem;
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .to-top.show {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .to-top:hover {
+    background: var(--gold);
+    color: var(--navy);
+  }
+
+  /* ===== الجوال ===== */
+  @media (max-width: 600px) {
+    .logo { width: 110px; height: 110px; }
+    .site-title { font-size: 1.6rem; }
+    .site-tagline { font-size: 0.95rem; }
+    .container { padding: 20px 14px 60px; }
+    .card { padding: 20px 16px; }
+    .card::after { font-size: 80px; }
+    .to-top { left: 16px; }
+    .page-toggle { width: 46px; height: 46px; font-size: 1.1rem; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ========== الترويسة ========== -->
+<header class="header">
+  <img src="mha-logo.png" alt="MHA — Modern Harmony Alliance" class="logo">
+  <h1 class="site-title">MHA Explorer</h1>
+  <p class="site-tagline">حيث العلم يُنشر</p>
+  <p class="site-sub">MODERN HARMONY ALLIANCE</p>
+</header>
+
+<main class="container">
+
+  <!-- ========== الصفحة الأولى: النشر ========== -->
+  <section class="page active" id="page-publish">
+
+    <div class="card">
+      <p class="service-desc">
+        <strong>MHA Explorer</strong> موقع أكاديمي مستقل، يتيح نشر وتبادل المذكرات والملخصات الدراسية.<br>
+        النشر يتم بالتنسيق المباشر عبر تليجرام.<br>
+        لا وسيط، لا تعقيد، لا صور.<br>
+        فقط العلم، والكلمة، والرابط.
+      </p>
+    </div>
+
+    <div class="card">
+      <h2>نموذج النشر</h2>
+      <div class="field">
+        <label for="entityName">اسم الكيان المعلن</label>
+        <input type="text" id="entityName" maxlength="60" placeholder="مثال: مركز النور التعليمي">
+      </div>
+      <div class="field">
+        <label for="projectDescription">وصف الإعلان</label>
+        <textarea id="projectDescription" maxlength="300" placeholder="وصف مختصر للمذكرة أو الكورس"></textarea>
+      </div>
+      <button class="btn" id="publishBtn">النشر</button>
+    </div>
+
+    <div class="legal-notice">
+      <strong>تنبيه</strong>
+      باستخدامك هذا الموقع، فأنت تقر بأنك قرأت الحقول الثلاثة أدناه، وفهمتها، وتوافق عليها.
+      أي تعامل تقوم به على هذا الموقع هو على مسؤوليتك الشخصية وحدك.
+      لا يقدم الموقع أي ضمانات، ولا يتحمل المشغّلون أي مسؤولية عن أي خسارة أو نزاع أو ضرر.
+    </div>
+
+    <details>
+      <summary>سياسة الاستخدام</summary>
+      <div>
+        <strong>MHA Explorer</strong> موقع أكاديمي مستقل، يديره مشغّلون متطوعون، هدفه نشر وتبادل المذكرات والملخصات.<br>
+        <strong>MHA</strong> هي نقاط ولاء داخلية ورمز مميز تُستخدم لتنظيم النشر داخل الموقع.<br>
+        النشر يتطلب حرق عدد من النقاط كالتزام تقني، والحرق نهائي.<br>
+        التعامل المباشر بين الناشر والمستخدم، والموقع لا يتدخل في أي اتفاق بينهما.<br>
+        الدعم عبر قناة تليجرام رسمية.
+      </div>
+    </details>
+
+    <details>
+      <summary>شروط الخدمة</summary>
+      <div>
+        باستخدامك الموقع، فأنت تقر بأنك قرأت هذه الشروط ووافقت عليها.<br>
+        الموقع مخصص لمن بلغ 18 عاماً على الأقل.<br>
+        <strong>MHA</strong> نقاط ولاء داخلية ورمز مميز، نطاق استخدامها هو الموقع.<br>
+        الحرق اليدوي يتم بالتنسيق مع الدعم.<br>
+        التفاعل مع العقد على Polygon خارج نطاق الموقع، والمستخدم مسؤول عنه.<br>
+        المشغّلون أفراد، وليسوا كياناً تجارياً.
+      </div>
+    </details>
+
+    <details>
+      <summary>التوصيف القانوني</summary>
+      <div>
+        <strong>MHA Explorer</strong> موقع أكاديمي مستقل.<br>
+        <strong>MHA</strong> نقاط ولاء داخلية ورمز مميز، تُشبه نقاط المتاجر الكبرى.<br>
+        نطاق استخدامها هو الموقع، وتُمنح مقابل نشاط داخلي.<br>
+        المشغّلون أفراد، لا كيان قانوني، ولا شركة، ولا مؤسسة.<br>
+        مستوحى من فلسفة المجتمعات الرقمية المفتوحة، دون أي ارتباط رسمي بأي جهة.
+      </div>
+    </details>
+
+  </section>
+
+  <!-- ========== الصفحة الثانية: العقد ========== -->
+  <section class="page" id="page-contract">
+
+    <div class="card">
+      <h2>عنوان العقد</h2>
+      <div class="contract-addr" id="contractDisplay">0x00D4...d41b</div>
+      <button class="btn" id="copyContractBtn">نسخ العنوان</button>
+      <span class="copy-msg" id="copyContractMsg">✓ تم النسخ</span>
+    </div>
+
+    <div class="card">
+      <h2>السوق</h2>
+      <button class="btn disabled" disabled>
+        🔒 QuickSwap — Soon
+      </button>
+    </div>
+
+    <div class="legal-notice">
+      <strong>تنبيه</strong>
+      باستخدامك هذا الموقع، فأنت تقر بأنك قرأت الحقول الثلاثة أدناه، وفهمتها، وتوافق عليها.
+      أي تعامل تقوم به على هذا الموقع هو على مسؤوليتك الشخصية وحدك.
+      لا يقدم الموقع أي ضمانات، ولا يتحمل المشغّلون أي مسؤولية عن أي خسارة أو نزاع أو ضرر.
+    </div>
+
+    <details>
+      <summary>سياسة الاستخدام</summary>
+      <div>
+        <strong>MHA Explorer</strong> موقع أكاديمي مستقل، يديره مشغّلون متطوعون، هدفه نشر وتبادل المذكرات والملخصات.<br>
+        <strong>MHA</strong> هي نقاط ولاء داخلية ورمز مميز تُستخدم لتنظيم النشر داخل الموقع.<br>
+        النشر يتطلب حرق عدد من النقاط كالتزام تقني، والحرق نهائي.<br>
+        التعامل المباشر بين الناشر والمستخدم، والموقع لا يتدخل في أي اتفاق بينهما.<br>
+        الدعم عبر قناة تليجرام رسمية.
+      </div>
+    </details>
+
+    <details>
+      <summary>شروط الخدمة</summary>
+      <div>
+        باستخدامك الموقع، فأنت تقر بأنك قرأت هذه الشروط ووافقت عليها.<br>
+        الموقع مخصص لمن بلغ 18 عاماً على الأقل.<br>
+        <strong>MHA</strong> نقاط ولاء داخلية ورمز مميز، نطاق استخدامها هو الموقع.<br>
+        الحرق اليدوي يتم بالتنسيق مع الدعم.<br>
+        التفاعل مع العقد على Polygon خارج نطاق الموقع، والمستخدم مسؤول عنه.<br>
+        المشغّلون أفراد، وليسوا كياناً تجارياً.
+      </div>
+    </details>
+
+    <details>
+      <summary>التوصيف القانوني</summary>
+      <div>
+        <strong>MHA Explorer</strong> موقع أكاديمي مستقل.<br>
+        <strong>MHA</strong> نقاط ولاء داخلية ورمز مميز، تُشبه نقاط المتاجر الكبرى.<br>
+        نطاق استخدامها هو الموقع، وتُمنح مقابل نشاط داخلي.<br>
+        المشغّلون أفراد، لا كيان قانوني، ولا شركة، ولا مؤسسة.<br>
+        مستوحى من فلسفة المجتمعات الرقمية المفتوحة، دون أي ارتباط رسمي بأي جهة.
+      </div>
+    </details>
+
+  </section>
+
+</main>
+
+<!-- ========== الفوتر ========== -->
+<footer>
+  <span class="seal">印</span>
+  MHA Explorer · Modern Harmony Alliance
+</footer>
+
+<!-- ========== زر الترقيم ========== -->
+<button class="page-toggle" id="pageToggle" aria-label="تبديل الصفحة">1</button>
+
+<!-- ========== زر العودة للأعلى ========== -->
+<button class="to-top" id="toTop" aria-label="العودة للأعلى">▲</button>
+
+<!-- ========== JavaScript ========== -->
+<script>
+  // ====== القيم (استبدلها لاحقاً) ======
+  const CONFIG = {
+    telegramUser: "MHA_Explorer",   // ← ضع اسم المستخدم هنا بدون @
+    contractFull: "0x00D423E70C2F631d963B17C3661fD07aAcCCd41b",
+    contractShort: "0x00D4...d41b"
+  };
+
+  // ====== تبديل الصفحات ======
+  const pageToggle = document.getElementById("pageToggle");
+  const pages = {
+    1: document.getElementById("page-publish"),
+    2: document.getElementById("page-contract")
+  };
+  let currentPage = 1;
+
+  pageToggle.addEventListener("click", () => {
+    pages[currentPage].classList.remove("active");
+    currentPage = currentPage === 1 ? 2 : 1;
+    pages[currentPage].classList.add("active");
+    pageToggle.textContent = currentPage;
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  });
+
+  // ====== زر النشر إلى تليجرام ======
+  document.getElementById("publishBtn").addEventListener("click", () => {
+    const entity = document.getElementById("entityName").value.trim();
+    const desc = document.getElementById("projectDescription").value.trim();
+
+    if (!entity || !desc) {
+      alert("يرجى إكمال الحقلين قبل النشر.");
+      return;
+    }
+
+    const msg =
+      "اسم الكيان: " + entity + "\n" +
+      "وصف الإعلان: " + desc;
+
+    const url = "https://t.me/" + CONFIG.telegramUser +
+                "?text=" + encodeURIComponent(msg);
+    window.open(url, "_blank");
+  });
+
+  // ====== نسخ عنوان العقد ======
+  const copyBtn = document.getElementById("copyContractBtn");
+  const copyMsg = document.getElementById("copyContractMsg");
+  const contractDisplay = document.getElementById("contractDisplay");
+
+  contractDisplay.textContent = CONFIG.contractShort;
+
+  copyBtn.addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(CONFIG.contractFull);
+      copyMsg.style.display = "inline";
+      setTimeout(() => { copyMsg.style.display = "none"; }, 2000);
+    } catch (err) {
+      alert("تعذر النسخ. العنوان:\n" + CONFIG.contractFull);
+    }
+  });
+
+  // ====== زر العودة للأعلى ======
+  const toTop = document.getElementById("toTop");
+  window.addEventListener("scroll", () => {
+    if (window.scrollY > 300) {
+      toTop.classList.add("show");
+    } else {
+      toTop.classList.remove("show");
+    }
+  });
+  toTop.addEventListener("click", () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  });
+</script>
+
+</body>
+          </html>
