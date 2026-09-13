@@ -4,652 +4,391 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MHA Explorer — Soon</title>
-<meta name="description" content="MHA Explorer — تبادل المراجع الدراسية. قريباً.">
 <style>
   :root {
     --navy: #1B3A5C;
     --gold: #D4A93C;
-    --ink: #1A1A1A;
     --paper: #F5F0E6;
     --crimson: #B22222;
     --border: rgba(212, 169, 60, 0.35);
   }
-
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  html { scroll-behavior: smooth; }
-
   body {
-    font-family: 'Noto Serif', 'Noto Serif SC', serif;
+    font-family: 'Noto Serif', serif;
     background: var(--paper);
-    color: var(--ink);
-    min-height: 100vh;
+    color: #1A1A1A;
     line-height: 1.8;
-    padding-bottom: 60px;
-    background-image:
-      radial-gradient(circle at 15% 20%, rgba(27,58,92,0.04) 0%, transparent 45%),
-      radial-gradient(circle at 85% 80%, rgba(212,169,60,0.06) 0%, transparent 45%);
+    padding: 20px;
   }
+  .wrap { max-width: 640px; margin: 0 auto; }
 
-  /* ===== Hero ===== */
   .hero {
     text-align: center;
-    padding: 50px 20px 30px;
+    padding: 30px 0;
     border-bottom: 1px solid var(--border);
-    position: relative;
+    margin-bottom: 30px;
   }
-  .hero::after {
-    content: "";
-    display: block;
-    width: 60px;
-    height: 2px;
-    background: var(--gold);
-    margin: 22px auto 0;
-  }
-  .hero-logo {
-    width: 140px;
-    height: 140px;
-    object-fit: contain;
-    filter: drop-shadow(0 4px 10px rgba(27,58,92,0.25));
-    transition: transform 0.6s ease;
-  }
-  .hero-logo:hover { transform: scale(1.04); }
-  .hero-title {
-    font-size: 2rem;
+  .hero img { width: 120px; height: 120px; object-fit: contain; }
+  .hero h1 {
     color: var(--navy);
-    margin-top: 14px;
     letter-spacing: 4px;
-    font-weight: 700;
+    margin-top: 10px;
+    font-size: 1.8rem;
   }
-  .hero-tagline {
-    font-size: 1.05rem;
-    color: var(--crimson);
-    letter-spacing: 2px;
-    margin-top: 6px;
-  }
-  .hero-sub {
-    font-size: 0.8rem;
-    color: #666;
-    letter-spacing: 2px;
-    margin-top: 6px;
-    font-family: 'Noto Sans', sans-serif;
-  }
-
-  /* ===== SOON Badge ===== */
-  .soon-badge {
+  .hero p { color: var(--crimson); letter-spacing: 2px; margin-top: 4px; }
+  .soon {
     display: inline-block;
-    margin-top: 20px;
-    padding: 8px 26px;
+    margin-top: 14px;
+    padding: 6px 22px;
     background: #fff;
     border: 1px solid var(--gold);
     border-radius: 30px;
-    font-size: 0.85rem;
     color: var(--navy);
     letter-spacing: 6px;
+    font-size: 0.8rem;
     font-weight: 700;
   }
-  .soon-badge span { color: var(--gold); }
 
-  /* ===== الحاوية ===== */
-  .container {
-    max-width: 720px;
-    margin: 0 auto;
-    padding: 34px 20px 40px;
-  }
-
-  /* ===== البطاقات ===== */
   .card {
     background: #fff;
     border: 1px solid var(--border);
     border-radius: 4px;
-    padding: 24px;
-    margin-bottom: 22px;
+    padding: 22px;
+    margin-bottom: 20px;
     box-shadow: 0 2px 8px rgba(27,58,92,0.05);
-    position: relative;
-    overflow: hidden;
   }
-  .card::before {
-    content: "";
-    position: absolute;
-    top: 8px;
-    right: 8px;
-    width: 18px;
-    height: 18px;
-    border-top: 1px solid var(--gold);
-    border-right: 1px solid var(--gold);
-  }
-  .card::after {
-    content: "MHA";
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    font-family: 'Noto Serif', serif;
-    font-size: 110px;
-    font-weight: 700;
-    color: var(--gold);
-    opacity: 0.05;
-    pointer-events: none;
-    z-index: 0;
-    letter-spacing: 8px;
-  }
-  .card > * { position: relative; z-index: 1; }
-
   .card h2 {
-    font-size: 1.05rem;
     color: var(--navy);
-    margin-bottom: 16px;
+    font-size: 1rem;
+    margin-bottom: 14px;
     letter-spacing: 1px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
   }
-  .card h2::before {
-    content: "◆";
-    color: var(--gold);
-    font-size: 0.7rem;
-  }
+  .card h2::before { content: "◆ "; color: var(--gold); }
 
-  /* ===== الحقول ===== */
-  .field { margin-bottom: 14px; }
-  .field label {
-    display: block;
-    color: var(--navy);
-    font-size: 0.88rem;
-    margin-bottom: 6px;
-    letter-spacing: 1px;
-  }
-  .field label::before {
-    content: "◆ ";
-    color: var(--gold);
-    font-size: 0.7rem;
-  }
-  .field input,
-  .field textarea {
+  input, textarea {
     width: 100%;
-    padding: 11px 13px;
+    padding: 10px 12px;
     background: #FDFBF6;
     border: 1px solid var(--border);
     border-radius: 3px;
     font-family: inherit;
     font-size: 1rem;
-    color: var(--ink);
-    transition: all 0.3s ease;
+    margin-bottom: 12px;
     resize: vertical;
   }
-  .field input:focus,
-  .field textarea:focus {
+  input:focus, textarea:focus {
     outline: none;
     border-color: var(--navy);
-    box-shadow: 0 0 0 3px rgba(212,169,60,0.15);
   }
-  .field textarea { min-height: 90px; }
-  .field .counter {
-    display: block;
-    text-align: left;
-    font-size: 0.75rem;
-    color: #999;
-    margin-top: 4px;
-    font-family: 'Courier New', monospace;
-  }
+  textarea { min-height: 80px; }
 
-  /* ===== الأزرار ===== */
-  .btn {
-    display: block;
+  button {
     width: 100%;
-    padding: 12px 22px;
+    padding: 12px;
     background: var(--navy);
     color: var(--paper);
     border: 1px solid var(--gold);
     border-radius: 3px;
     font-family: inherit;
-    font-size: 0.98rem;
+    font-size: 1rem;
     cursor: pointer;
     letter-spacing: 2px;
-    transition: all 0.3s ease;
-    text-decoration: none;
-    text-align: center;
-    margin-bottom: 8px;
+    transition: all 0.3s;
   }
-  .btn:hover {
-    background: var(--gold);
-    color: var(--navy);
-  }
-  .btn-outline {
-    background: transparent;
-    color: var(--navy);
-  }
-  .btn-outline:hover {
-    background: var(--navy);
-    color: var(--paper);
-  }
-  .btn-small {
-    display: inline-block;
-    width: auto;
-    padding: 6px 16px;
-    font-size: 0.82rem;
-    letter-spacing: 1px;
-    margin: 0 0 0 6px;
-  }
-  .btn-danger {
-    background: var(--crimson);
-    border-color: var(--crimson);
-    color: #fff;
-  }
-  .btn-danger:hover {
-    background: #8B1A1A;
-    color: #fff;
-  }
+  button:hover { background: var(--gold); color: var(--navy); }
+  button:disabled { background: #ccc; cursor: not-allowed; }
 
-  /* ===== بطاقة إعلان محفوظ ===== */
-  .ad-card {
+  .ad {
     background: #FDFBF6;
     border: 1px solid var(--border);
     border-radius: 3px;
-    padding: 16px;
-    margin-bottom: 12px;
-    position: relative;
+    padding: 14px;
+    margin-bottom: 10px;
   }
-  .ad-card .ad-entity {
+  .ad-entity {
     color: var(--navy);
     font-weight: 700;
-    font-size: 1rem;
     margin-bottom: 6px;
   }
-  .ad-card .ad-desc {
+  .ad-desc {
     color: #555;
     font-size: 0.9rem;
     margin-bottom: 8px;
-    line-height: 1.7;
   }
-  .ad-card .ad-tg {
+  .ad-tg {
     color: var(--gold);
-    font-size: 0.82rem;
+    font-size: 0.85rem;
+    font-family: monospace;
     word-break: break-all;
-    font-family: 'Courier New', monospace;
+    text-decoration: none;
   }
-  .ad-card .ad-date {
+  .ad-tg:hover { text-decoration: underline; }
+  .ad-date {
     color: #aaa;
     font-size: 0.72rem;
     margin-top: 6px;
   }
-  .ad-card .ad-actions {
-    margin-top: 12px;
-    padding-top: 12px;
-    border-top: 1px dashed var(--border);
-    text-align: left;
+  .ad-mine {
+    display: inline-block;
+    background: var(--gold);
+    color: var(--navy);
+    font-size: 0.65rem;
+    padding: 2px 8px;
+    border-radius: 10px;
+    margin-right: 6px;
+    font-weight: 700;
   }
+  .ad-actions {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px dashed var(--border);
+  }
+  .btn-delete {
+    width: auto;
+    padding: 5px 14px;
+    font-size: 0.78rem;
+    background: var(--crimson);
+    border-color: var(--crimson);
+    color: #fff;
+    letter-spacing: 1px;
+  }
+  .btn-delete:hover { background: #8B1A1A; color: #fff; }
 
-  /* ===== الحالة الفارغة ===== */
-  .empty-state {
+  .empty {
     text-align: center;
-    padding: 30px 16px;
     color: #aaa;
+    padding: 20px;
     font-size: 0.9rem;
   }
-  .empty-state .icon {
-    font-size: 1.6rem;
-    color: var(--gold);
-    display: block;
-    margin-bottom: 8px;
-    opacity: 0.6;
-  }
-
-  /* ===== التنبيه ===== */
-  .legal-notice {
+  .notice {
     background: #FBF6EC;
     border: 1px dashed var(--crimson);
     border-radius: 4px;
-    padding: 16px 20px;
-    margin-bottom: 22px;
-    color: var(--crimson);
-    font-size: 0.88rem;
-    line-height: 1.9;
-    text-align: center;
-  }
-  .legal-notice strong { display: block; margin-bottom: 6px; letter-spacing: 2px; }
-
-  /* ===== الحقول القابلة للفتح ===== */
-  details {
-    border: 1px solid var(--border);
-    border-radius: 3px;
-    margin-bottom: 10px;
-    background: #fff;
-    overflow: hidden;
-  }
-  details summary {
-    cursor: pointer;
     padding: 14px 18px;
-    color: var(--navy);
-    font-weight: 600;
-    letter-spacing: 1px;
-    list-style: none;
-    position: relative;
-    transition: background 0.3s ease;
-    font-size: 0.95rem;
-  }
-  details summary::after {
-    content: "＋";
-    position: absolute;
-    left: 18px;
-    color: var(--gold);
-    font-weight: 700;
-    transition: transform 0.3s ease;
-  }
-  details[open] summary::after { content: "－"; }
-  details summary:hover { background: #FBF6EC; }
-  details > div {
-    padding: 6px 22px 18px;
-    color: #333;
-    font-size: 0.9rem;
-    border-top: 1px solid var(--border);
-    line-height: 1.9;
-  }
-
-  /* ===== الفوتر ===== */
-  footer {
-    text-align: center;
-    padding: 30px 20px;
-    color: #888;
-    font-size: 0.8rem;
-    border-top: 1px solid var(--border);
-    margin-top: 20px;
-  }
-  footer .seal {
     color: var(--crimson);
-    font-size: 1.3rem;
-    display: block;
-    margin-bottom: 8px;
+    font-size: 0.85rem;
+    line-height: 1.9;
+    text-align: center;
+    margin-bottom: 20px;
   }
-
-  /* ===== زر العودة للأعلى ===== */
-  .to-top {
-    position: fixed;
-    bottom: 24px;
-    left: 24px;
-    width: 42px;
-    height: 42px;
-    background: var(--paper);
-    color: var(--gold);
-    border: 1px solid var(--gold);
-    border-radius: 50%;
-    cursor: pointer;
-    z-index: 150;
-    font-size: 1rem;
-    opacity: 0;
-    pointer-events: none;
-    transition: all 0.3s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  .to-top.show { opacity: 1; pointer-events: auto; }
-  .to-top:hover { background: var(--gold); color: var(--navy); }
-
-  /* ===== الجوال ===== */
-  @media (max-width: 600px) {
-    .hero { padding: 34px 16px 24px; }
-    .hero-logo { width: 110px; height: 110px; }
-    .hero-title { font-size: 1.5rem; letter-spacing: 2px; }
-    .hero-tagline { font-size: 0.95rem; }
-    .soon-badge { letter-spacing: 4px; font-size: 0.78rem; padding: 6px 18px; }
-    .container { padding: 22px 14px 30px; }
-    .card { padding: 20px 16px; }
-    .card::after { font-size: 70px; }
-    .btn-small { padding: 6px 12px; font-size: 0.78rem; }
-    .to-top { left: 16px; }
-  }
+  .notice strong { display: block; margin-bottom: 4px; }
 </style>
 </head>
 <body>
 
-<!-- ========== Hero ========== -->
-<header class="hero">
-  <img src="mha-logo.png" alt="MHA — Modern Harmony Alliance" class="hero-logo">
-  <h1 class="hero-title">MHA Explorer</h1>
-  <p class="hero-tagline">حيث العلم يُنشر</p>
-  <p class="hero-sub">MODERN HARMONY ALLIANCE</p>
-  <div class="soon-badge">SOON <span>·</span> PI</div>
-</header>
+<div class="wrap">
 
-<main class="container">
+  <header class="hero">
+    <img src="mha-logo.png" alt="MHA">
+    <h1>MHA Explorer</h1>
+    <p>حيث العلم يُنشر</p>
+    <div class="soon">SOON</div>
+  </header>
 
-  <!-- ========== نموذج النشر ========== -->
   <div class="card">
     <h2>نموذج النشر</h2>
-
-    <div class="field">
-      <label for="entityName">اسم الكيان المعلن</label>
-      <input type="text" id="entityName" maxlength="60"
-             placeholder="مثال: مركز النور التعليمي">
-      <span class="counter"><span id="entityCount">0</span>/60</span>
-    </div>
-
-    <div class="field">
-      <label for="adDescription">وصف الإعلان</label>
-      <textarea id="adDescription" maxlength="300"
-                placeholder="وصف مختصر للمذكرة أو الملخص أو الدرس"></textarea>
-      <span class="counter"><span id="descCount">0</span>/300</span>
-    </div>
-
-    <div class="field">
-      <label for="tgContact">رابط التواصل (تليجرام)</label>
-      <input type="url" id="tgContact"
-             placeholder="https://t.me/username">
-    </div>
-
-    <button class="btn" id="saveBtn">حفظ الإعلان محلياً</button>
-    <p style="font-size:0.78rem; color:#999; text-align:center; margin-top:6px;">
-      يُحفظ الإعلان في متصفحك فقط، ولا يُرسل إلى أي سيرفر.
-    </p>
+    <input id="entity" maxlength="60" placeholder="اسم الكيان المعلن">
+    <textarea id="desc" maxlength="300" placeholder="وصف الإعلان"></textarea>
+    <input id="tg" placeholder="https://t.me/username">
+    <button id="publish">نشر الإعلان</button>
   </div>
 
-  <!-- ========== الإعلانات المحفوظة ========== -->
   <div class="card">
-    <h2>إعلاناتي المحفوظة</h2>
-    <div id="adsList"></div>
-    <div class="empty-state" id="emptyState">
-      <span class="icon">◆</span>
-      لا توجد إعلانات محفوظة بعد.
-    </div>
+    <h2>الإعلانات المنشورة</h2>
+    <div id="list"><div class="empty">جاري التحميل...</div></div>
   </div>
 
-  <!-- ========== التنبيه ========== -->
-  <div class="legal-notice">
+  <div class="notice">
     <strong>تنبيه</strong>
-    باستخدامك هذا الموقع، فأنت تقر بأنك قرأت الحقول الثلاثة أدناه، وفهمتها، وتوافق عليها.
     أي تعامل تقوم به على هذا الموقع هو على مسؤوليتك الشخصية وحدك.
-    لا يقدم الموقع أي ضمانات، ولا يتحمل المشغّلون أي مسؤولية عن أي خسارة أو نزاع أو ضرر.
   </div>
 
-  <!-- ========== الحقول الثلاثة ========== -->
-  <details>
-    <summary>سياسة الاستخدام</summary>
-    <div>
-      <strong>MHA Explorer</strong> موقع أكاديمي مستقل، يديره مشغّلون متطوعون، هدفه نشر وتبادل المذكرات والملخصات.<br>
-      <strong>MHA</strong> هي نقاط ولاء داخلية ورمز مميز تُستخدم لتنظيم النشر داخل الموقع.<br>
-      النشر يتطلب حرق عدد من النقاط كالتزام تقني، والحرق نهائي.<br>
-      التعامل المباشر بين الناشر والمستخدم، والموقع لا يتدخل في أي اتفاق بينهما.
-    </div>
-  </details>
+</div>
 
-  <details>
-    <summary>شروط الخدمة</summary>
-    <div>
-      باستخدامك الموقع، فأنت تقر بأنك قرأت هذه الشروط ووافقت عليها.<br>
-      الموقع مخصص لمن بلغ 18 عاماً على الأقل.<br>
-      <strong>MHA</strong> نقاط ولاء داخلية ورمز مميز، نطاق استخدامها هو الموقع.<br>
-      الحرق اليدوي يتم بالتنسيق مع الدعم.<br>
-      المشغّلون أفراد، وليسوا كياناً تجارياً.
-    </div>
-  </details>
-
-  <details>
-    <summary>التوصيف القانوني</summary>
-    <div>
-      <strong>MHA Explorer</strong> موقع أكاديمي مستقل.<br>
-      <strong>MHA</strong> نقاط ولاء داخلية ورمز مميز، تُشبه نقاط المتاجر الكبرى.<br>
-      نطاق استخدامها هو الموقع، وتُمنح مقابل نشاط داخلي.<br>
-      المشغّلون أفراد، لا كيان قانوني، ولا شركة، ولا مؤسسة.
-    </div>
-  </details>
-
-</main>
-
-<!-- ========== الفوتر ========== -->
-<footer>
-  <span class="seal">印</span>
-  MHA Explorer · Modern Harmony Alliance
-</footer>
-
-<!-- ========== زر العودة للأعلى ========== -->
-<button class="to-top" id="toTop" aria-label="العودة للأعلى">▲</button>
-
-<!-- ========== JavaScript ========== -->
 <script>
-  // ====== القيم ======
-  const CONFIG = {
-    telegramUser: "MHA_Explorer",   // ← ضع اسم مستخدم تليجرام هنا
-    storageKey: "MHA_ADS_V1"
-  };
+  // ====== الإعداد (جاهز) ======
+  const FIREBASE_URL = "https://mhaexplorer-ac7a7-default-rtdb.europe-west1.firebasedatabase.app";
+  const KEY_STORE = "MHA_MY_KEYS";
+  const RATE_MS = 5 * 60 * 1000;
 
-  // ====== أدوات مساعدة ======
-  function escapeHtml(str) {
-    return String(str)
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#39;");
+  // ====== عناصر الصفحة ======
+  const $entity = document.getElementById("entity");
+  const $desc   = document.getElementById("desc");
+  const $tg     = document.getElementById("tg");
+  const $btn    = document.getElementById("publish");
+  const $list   = document.getElementById("list");
+
+  // ====== أدوات ======
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, c => ({
+      "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+    })[c]);
   }
 
-  function formatDate(iso) {
-    const d = new Date(iso);
-    const pad = n => String(n).padStart(2, "0");
-    return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  function getMyKeys() {
+    try { return JSON.parse(localStorage.getItem(KEY_STORE) || "{}"); }
+    catch (e) { return {}; }
+  }
+  function addMyKey(id, key) {
+    const k = getMyKeys();
+    k[id] = key;
+    localStorage.setItem(KEY_STORE, JSON.stringify(k));
+  }
+  function removeMyKey(id) {
+    const k = getMyKeys();
+    delete k[id];
+    localStorage.setItem(KEY_STORE, JSON.stringify(k));
+  }
+  function newKey() {
+    return Math.random().toString(36).slice(2) + Date.now().toString(36);
   }
 
-  function loadAds() {
-    try {
-      return JSON.parse(localStorage.getItem(CONFIG.storageKey) || "[]");
-    } catch (e) {
-      return [];
-    }
-  }
-
-  function saveAds(ads) {
-    localStorage.setItem(CONFIG.storageKey, JSON.stringify(ads));
-  }
-
-  // ====== عدّادات الحقول ======
-  const entityInput = document.getElementById("entityName");
-  const descInput   = document.getElementById("adDescription");
-  const entityCount = document.getElementById("entityCount");
-  const descCount   = document.getElementById("descCount");
-
-  entityInput.addEventListener("input", () => {
-    entityCount.textContent = entityInput.value.length;
-  });
-  descInput.addEventListener("input", () => {
-    descCount.textContent = descInput.value.length;
-  });
-
-  // ====== حفظ الإعلان ======
-  const saveBtn = document.getElementById("saveBtn");
-
-  saveBtn.addEventListener("click", () => {
-    const entity = entityInput.value.trim();
-    const desc   = descInput.value.trim();
-    const tg     = document.getElementById("tgContact").value.trim();
+  // ====== نشر الإعلان ======
+  $btn.addEventListener("click", async () => {
+    const entity = $entity.value.trim();
+    const desc   = $desc.value.trim();
+    const tg     = $tg.value.trim();
 
     if (!entity || !desc || !tg) {
-      alert("يرجى إكمال الحقول الثلاثة.");
+      alert("املأ الحقول الثلاثة.");
       return;
     }
     if (!/^https?:\/\/(t\.me|telegram\.me)\//i.test(tg)) {
-      alert("رابط التواصل يجب أن يبدأ بـ https://t.me/");
+      alert("الرابط يجب أن يبدأ بـ https://t.me/");
       return;
     }
 
-    const ads = loadAds();
-    ads.unshift({
-      id: Date.now(),
-      entity: entity,
-      description: desc,
-      telegram: tg,
-      createdAt: new Date().toISOString()
-    });
-    saveAds(ads);
+    const last = Number(localStorage.getItem("MHA_LAST") || 0);
+    const now = Date.now();
+    if (now - last < RATE_MS) {
+      const min = Math.ceil((RATE_MS - (now - last)) / 60000);
+      alert(`انتظر ${min} دقيقة قبل النشر مرة أخرى.`);
+      return;
+    }
 
-    entityInput.value = "";
-    descInput.value = "";
-    document.getElementById("tgContact").value = "";
-    entityCount.textContent = "0";
-    descCount.textContent = "0";
+    $btn.disabled = true;
+    $btn.textContent = "جاري النشر...";
 
-    renderAds();
+    const key = newKey();
+
+    try {
+      const res = await fetch(FIREBASE_URL + "/ads.json", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          entity: entity,
+          description: desc,
+          telegram: tg,
+          createdAt: now,
+          deleteKey: key
+        })
+      });
+
+      if (!res.ok) throw new Error("fail");
+
+      const data = await res.json();
+      addMyKey(data.name, key);
+      localStorage.setItem("MHA_LAST", String(now));
+
+      $entity.value = "";
+      $desc.value = "";
+      $tg.value = "";
+
+      await loadAds();
+      alert("تم النشر!");
+    } catch (err) {
+      alert("تعذر النشر.");
+    } finally {
+      $btn.disabled = false;
+      $btn.textContent = "نشر الإعلان";
+    }
   });
 
-  // ====== عرض الإعلانات ======
-  function renderAds() {
-    const ads = loadAds();
-    const list = document.getElementById("adsList");
-    const empty = document.getElementById("emptyState");
+  // ====== تحميل الإعلانات ======
+  async function loadAds() {
+    try {
+      const res = await fetch(FIREBASE_URL + "/ads.json");
+      const data = await res.json();
 
-    if (ads.length === 0) {
-      list.innerHTML = "";
-      empty.style.display = "block";
+      if (!data) {
+        $list.innerHTML = '<div class="empty">لا توجد إعلانات بعد.</div>';
+        return;
+      }
+
+      const myKeys = getMyKeys();
+      const ads = Object.keys(data)
+        .map(id => ({ id, ...data[id] }))
+        .sort((a, b) => b.createdAt - a.createdAt);
+
+      $list.innerHTML = ads.map(ad => {
+        const d = new Date(ad.createdAt);
+        const date = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+        const isMine = myKeys[ad.id] === ad.deleteKey;
+
+        return `
+          <div class="ad">
+            <div class="ad-entity">
+              ${isMine ? '<span class="ad-mine">إعلاني</span>' : ''}
+              ◆ ${esc(ad.entity)}
+            </div>
+            <div class="ad-desc">${esc(ad.description)}</div>
+            <a class="ad-tg" href="${esc(ad.telegram)}" target="_blank" rel="noopener">${esc(ad.telegram)}</a>
+            <div class="ad-date">${date}</div>
+            ${isMine ? `
+              <div class="ad-actions">
+                <button class="btn-delete" data-del="${ad.id}">حذف الإعلان</button>
+              </div>
+            ` : ''}
+          </div>
+        `;
+      }).join("");
+
+      $list.querySelectorAll("[data-del]").forEach(b => {
+        b.addEventListener("click", () => deleteAd(b.dataset.del));
+      });
+
+    } catch (err) {
+      $list.innerHTML = '<div class="empty">تعذر التحميل.</div>';
+    }
+  }
+
+  // ====== حذف الإعلان ======
+  async function deleteAd(id) {
+    if (!confirm("هل أنت متأكد من حذف هذا الإعلان؟")) return;
+
+    const myKeys = getMyKeys();
+    const myKey = myKeys[id];
+
+    if (!myKey) {
+      alert("لا تملك صلاحية حذف هذا الإعلان.");
       return;
     }
-    empty.style.display = "none";
 
-    list.innerHTML = ads.map(ad => {
-      const msg =
-        "السلام عليكم،\n" +
-        "أرغب في نشر الإعلان التالي:\n\n" +
-        "اسم الكيان: " + ad.entity + "\n" +
-        "وصف الإعلان: " + ad.description + "\n" +
-        "رابط التواصل: " + ad.telegram;
+    try {
+      const res = await fetch(`${FIREBASE_URL}/ads/${id}.json`);
+      const ad = await res.json();
 
-      const tgUrl = "https://t.me/" + CONFIG.telegramUser +
-                    "?text=" + encodeURIComponent(msg);
+      if (!ad || ad.deleteKey !== myKey) {
+        alert("المفتاح غير صحيح.");
+        return;
+      }
 
-      return `
-        <div class="ad-card" data-id="${ad.id}">
-          <div class="ad-entity">◆ ${escapeHtml(ad.entity)}</div>
-          <div class="ad-desc">${escapeHtml(ad.description)}</div>
-          <div class="ad-tg">${escapeHtml(ad.telegram)}</div>
-          <div class="ad-date">${formatDate(ad.createdAt)}</div>
-          <div class="ad-actions">
-            <a class="btn btn-small" href="${tgUrl}" target="_blank" rel="noopener">إرسال للحرق</a>
-            <button class="btn btn-small btn-danger" data-delete="${ad.id}">حذف</button>
-          </div>
-        </div>
-      `;
-    }).join("");
-
-    list.querySelectorAll("[data-delete]").forEach(btn => {
-      btn.addEventListener("click", () => {
-        const id = Number(btn.dataset.delete);
-        if (!confirm("هل أنت متأكد من حذف هذا الإعلان؟")) return;
-        const ads = loadAds().filter(a => a.id !== id);
-        saveAds(ads);
-        renderAds();
+      const del = await fetch(`${FIREBASE_URL}/ads/${id}.json`, {
+        method: "DELETE"
       });
-    });
+
+      if (!del.ok) throw new Error("fail");
+
+      removeMyKey(id);
+      await loadAds();
+      alert("تم الحذف.");
+    } catch (err) {
+      alert("تعذر الحذف.");
+    }
   }
 
   // ====== تشغيل أولي ======
-  renderAds();
-
-  // ====== زر العودة للأعلى ======
-  const toTop = document.getElementById("toTop");
-  window.addEventListener("scroll", () => {
-    if (window.scrollY > 300) toTop.classList.add("show");
-    else toTop.classList.remove("show");
-  });
-  toTop.addEventListener("click", () => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  });
+  loadAds();
 </script>
 
 </body>
