@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MHA Explorer — Soon</title>
-<meta name="description" content="MHA Explorer — قريباً. تبادل المراجع الدراسية.">
+<meta name="description" content="MHA Explorer — تبادل المراجع الدراسية. قريباً.">
 <style>
   :root {
     --navy: #1B3A5C;
@@ -23,167 +23,634 @@
     background: var(--paper);
     color: var(--ink);
     min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    line-height: 1.9;
-    padding: 30px 20px;
+    line-height: 1.8;
+    padding-bottom: 60px;
     background-image:
-      radial-gradient(circle at 15% 20%, rgba(27,58,92,0.05) 0%, transparent 45%),
-      radial-gradient(circle at 85% 80%, rgba(212,169,60,0.07) 0%, transparent 45%);
+      radial-gradient(circle at 15% 20%, rgba(27,58,92,0.04) 0%, transparent 45%),
+      radial-gradient(circle at 85% 80%, rgba(212,169,60,0.06) 0%, transparent 45%);
   }
 
-  .card {
-    background: #fff;
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    padding: 50px 40px;
-    max-width: 560px;
-    width: 100%;
+  /* ===== Hero ===== */
+  .hero {
     text-align: center;
-    box-shadow: 0 4px 20px rgba(27,58,92,0.08);
+    padding: 50px 20px 30px;
+    border-bottom: 1px solid var(--border);
     position: relative;
-    overflow: hidden;
   }
-
-  /* زوايا ذهبية */
-  .card::before,
-  .card::after {
+  .hero::after {
     content: "";
-    position: absolute;
-    width: 22px;
-    height: 22px;
-    border-color: var(--gold);
-    border-style: solid;
+    display: block;
+    width: 60px;
+    height: 2px;
+    background: var(--gold);
+    margin: 22px auto 0;
   }
-  .card::before {
-    top: 10px;
-    right: 10px;
-    border-width: 1px 1px 0 0;
-  }
-  .card::after {
-    bottom: 10px;
-    left: 10px;
-    border-width: 0 0 1px 1px;
-  }
-
-  /* العلامة المائية MHA */
-  .watermark {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    font-family: 'Noto Serif', serif;
-    font-size: 140px;
-    font-weight: 700;
-    color: var(--gold);
-    opacity: 0.05;
-    pointer-events: none;
-    z-index: 0;
-    letter-spacing: 10px;
-  }
-
-  .content { position: relative; z-index: 1; }
-
-  .logo {
+  .hero-logo {
     width: 140px;
     height: 140px;
     object-fit: contain;
     filter: drop-shadow(0 4px 10px rgba(27,58,92,0.25));
     transition: transform 0.6s ease;
-    margin-bottom: 16px;
   }
-  .logo:hover { transform: scale(1.05); }
-
-  .brand {
-    font-size: 1.7rem;
+  .hero-logo:hover { transform: scale(1.04); }
+  .hero-title {
+    font-size: 2rem;
     color: var(--navy);
+    margin-top: 14px;
     letter-spacing: 4px;
     font-weight: 700;
-    margin-bottom: 6px;
   }
-
-  .tagline {
-    font-size: 1rem;
+  .hero-tagline {
+    font-size: 1.05rem;
     color: var(--crimson);
     letter-spacing: 2px;
-    margin-bottom: 24px;
+    margin-top: 6px;
+  }
+  .hero-sub {
+    font-size: 0.8rem;
+    color: #666;
+    letter-spacing: 2px;
+    margin-top: 6px;
+    font-family: 'Noto Sans', sans-serif;
   }
 
-  .divider {
-    width: 60px;
-    height: 2px;
-    background: var(--gold);
-    margin: 22px auto;
-  }
-
-  .soon {
-    font-size: 2.6rem;
+  /* ===== SOON Badge ===== */
+  .soon-badge {
+    display: inline-block;
+    margin-top: 20px;
+    padding: 8px 26px;
+    background: #fff;
+    border: 1px solid var(--gold);
+    border-radius: 30px;
+    font-size: 0.85rem;
     color: var(--navy);
-    letter-spacing: 10px;
+    letter-spacing: 6px;
     font-weight: 700;
+  }
+  .soon-badge span { color: var(--gold); }
+
+  /* ===== الحاوية ===== */
+  .container {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 34px 20px 40px;
+  }
+
+  /* ===== البطاقات ===== */
+  .card {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 24px;
+    margin-bottom: 22px;
+    box-shadow: 0 2px 8px rgba(27,58,92,0.05);
+    position: relative;
+    overflow: hidden;
+  }
+  .card::before {
+    content: "";
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 18px;
+    height: 18px;
+    border-top: 1px solid var(--gold);
+    border-right: 1px solid var(--gold);
+  }
+  .card::after {
+    content: "MHA";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-family: 'Noto Serif', serif;
+    font-size: 110px;
+    font-weight: 700;
+    color: var(--gold);
+    opacity: 0.05;
+    pointer-events: none;
+    z-index: 0;
+    letter-spacing: 8px;
+  }
+  .card > * { position: relative; z-index: 1; }
+
+  .card h2 {
+    font-size: 1.05rem;
+    color: var(--navy);
+    margin-bottom: 16px;
+    letter-spacing: 1px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card h2::before {
+    content: "◆";
+    color: var(--gold);
+    font-size: 0.7rem;
+  }
+
+  /* ===== الحقول ===== */
+  .field { margin-bottom: 14px; }
+  .field label {
+    display: block;
+    color: var(--navy);
+    font-size: 0.88rem;
+    margin-bottom: 6px;
+    letter-spacing: 1px;
+  }
+  .field label::before {
+    content: "◆ ";
+    color: var(--gold);
+    font-size: 0.7rem;
+  }
+  .field input,
+  .field textarea {
+    width: 100%;
+    padding: 11px 13px;
+    background: #FDFBF6;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    font-family: inherit;
+    font-size: 1rem;
+    color: var(--ink);
+    transition: all 0.3s ease;
+    resize: vertical;
+  }
+  .field input:focus,
+  .field textarea:focus {
+    outline: none;
+    border-color: var(--navy);
+    box-shadow: 0 0 0 3px rgba(212,169,60,0.15);
+  }
+  .field textarea { min-height: 90px; }
+  .field .counter {
+    display: block;
+    text-align: left;
+    font-size: 0.75rem;
+    color: #999;
+    margin-top: 4px;
+    font-family: 'Courier New', monospace;
+  }
+
+  /* ===== الأزرار ===== */
+  .btn {
+    display: block;
+    width: 100%;
+    padding: 12px 22px;
+    background: var(--navy);
+    color: var(--paper);
+    border: 1px solid var(--gold);
+    border-radius: 3px;
+    font-family: inherit;
+    font-size: 0.98rem;
+    cursor: pointer;
+    letter-spacing: 2px;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    text-align: center;
+    margin-bottom: 8px;
+  }
+  .btn:hover {
+    background: var(--gold);
+    color: var(--navy);
+  }
+  .btn-outline {
+    background: transparent;
+    color: var(--navy);
+  }
+  .btn-outline:hover {
+    background: var(--navy);
+    color: var(--paper);
+  }
+  .btn-small {
+    display: inline-block;
+    width: auto;
+    padding: 6px 16px;
+    font-size: 0.82rem;
+    letter-spacing: 1px;
+    margin: 0 0 0 6px;
+  }
+  .btn-danger {
+    background: var(--crimson);
+    border-color: var(--crimson);
+    color: #fff;
+  }
+  .btn-danger:hover {
+    background: #8B1A1A;
+    color: #fff;
+  }
+
+  /* ===== بطاقة إعلان محفوظ ===== */
+  .ad-card {
+    background: #FDFBF6;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 16px;
+    margin-bottom: 12px;
+    position: relative;
+  }
+  .ad-card .ad-entity {
+    color: var(--navy);
+    font-weight: 700;
+    font-size: 1rem;
+    margin-bottom: 6px;
+  }
+  .ad-card .ad-desc {
+    color: #555;
+    font-size: 0.9rem;
+    margin-bottom: 8px;
+    line-height: 1.7;
+  }
+  .ad-card .ad-tg {
+    color: var(--gold);
+    font-size: 0.82rem;
+    word-break: break-all;
+    font-family: 'Courier New', monospace;
+  }
+  .ad-card .ad-date {
+    color: #aaa;
+    font-size: 0.72rem;
+    margin-top: 6px;
+  }
+  .ad-card .ad-actions {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px dashed var(--border);
+    text-align: left;
+  }
+
+  /* ===== الحالة الفارغة ===== */
+  .empty-state {
+    text-align: center;
+    padding: 30px 16px;
+    color: #aaa;
+    font-size: 0.9rem;
+  }
+  .empty-state .icon {
+    font-size: 1.6rem;
+    color: var(--gold);
+    display: block;
+    margin-bottom: 8px;
+    opacity: 0.6;
+  }
+
+  /* ===== التنبيه ===== */
+  .legal-notice {
+    background: #FBF6EC;
+    border: 1px dashed var(--crimson);
+    border-radius: 4px;
+    padding: 16px 20px;
+    margin-bottom: 22px;
+    color: var(--crimson);
+    font-size: 0.88rem;
+    line-height: 1.9;
+    text-align: center;
+  }
+  .legal-notice strong { display: block; margin-bottom: 6px; letter-spacing: 2px; }
+
+  /* ===== الحقول القابلة للفتح ===== */
+  details {
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    margin-bottom: 10px;
+    background: #fff;
+    overflow: hidden;
+  }
+  details summary {
+    cursor: pointer;
+    padding: 14px 18px;
+    color: var(--navy);
+    font-weight: 600;
+    letter-spacing: 1px;
+    list-style: none;
+    position: relative;
+    transition: background 0.3s ease;
+    font-size: 0.95rem;
+  }
+  details summary::after {
+    content: "＋";
+    position: absolute;
+    left: 18px;
+    color: var(--gold);
+    font-weight: 700;
+    transition: transform 0.3s ease;
+  }
+  details[open] summary::after { content: "－"; }
+  details summary:hover { background: #FBF6EC; }
+  details > div {
+    padding: 6px 22px 18px;
+    color: #333;
+    font-size: 0.9rem;
+    border-top: 1px solid var(--border);
+    line-height: 1.9;
+  }
+
+  /* ===== الفوتر ===== */
+  footer {
+    text-align: center;
+    padding: 30px 20px;
+    color: #888;
+    font-size: 0.8rem;
+    border-top: 1px solid var(--border);
+    margin-top: 20px;
+  }
+  footer .seal {
+    color: var(--crimson);
+    font-size: 1.3rem;
+    display: block;
     margin-bottom: 8px;
   }
 
-  .soon-sub {
-    font-size: 1rem;
+  /* ===== زر العودة للأعلى ===== */
+  .to-top {
+    position: fixed;
+    bottom: 24px;
+    left: 24px;
+    width: 42px;
+    height: 42px;
+    background: var(--paper);
     color: var(--gold);
-    letter-spacing: 6px;
-    margin-bottom: 24px;
+    border: 1px solid var(--gold);
+    border-radius: 50%;
+    cursor: pointer;
+    z-index: 150;
+    font-size: 1rem;
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
+  .to-top.show { opacity: 1; pointer-events: auto; }
+  .to-top:hover { background: var(--gold); color: var(--navy); }
 
-  .message {
-    font-size: 0.98rem;
-    color: #555;
-    line-height: 2;
-  }
-
-  .message strong {
-    color: var(--navy);
-  }
-
-  .seal {
-    color: var(--crimson);
-    font-size: 1.3rem;
-    margin-top: 26px;
-    display: block;
-  }
-
+  /* ===== الجوال ===== */
   @media (max-width: 600px) {
-    .card { padding: 40px 24px; }
-    .logo { width: 110px; height: 110px; }
-    .brand { font-size: 1.4rem; letter-spacing: 2px; }
-    .soon { font-size: 2rem; letter-spacing: 6px; }
-    .soon-sub { font-size: 0.85rem; letter-spacing: 4px; }
-    .watermark { font-size: 90px; }
-    .message { font-size: 0.92rem; }
+    .hero { padding: 34px 16px 24px; }
+    .hero-logo { width: 110px; height: 110px; }
+    .hero-title { font-size: 1.5rem; letter-spacing: 2px; }
+    .hero-tagline { font-size: 0.95rem; }
+    .soon-badge { letter-spacing: 4px; font-size: 0.78rem; padding: 6px 18px; }
+    .container { padding: 22px 14px 30px; }
+    .card { padding: 20px 16px; }
+    .card::after { font-size: 70px; }
+    .btn-small { padding: 6px 12px; font-size: 0.78rem; }
+    .to-top { left: 16px; }
   }
 </style>
 </head>
 <body>
 
+<!-- ========== Hero ========== -->
+<header class="hero">
+  <img src="mha-logo.png" alt="MHA — Modern Harmony Alliance" class="hero-logo">
+  <h1 class="hero-title">MHA Explorer</h1>
+  <p class="hero-tagline">حيث العلم يُنشر</p>
+  <p class="hero-sub">MODERN HARMONY ALLIANCE</p>
+  <div class="soon-badge">SOON <span>·</span> PI</div>
+</header>
+
+<main class="container">
+
+  <!-- ========== نموذج النشر ========== -->
   <div class="card">
-    <div class="watermark">MHA</div>
+    <h2>نموذج النشر</h2>
 
-    <div class="content">
-      <img src="mha-logo.png" alt="MHA — Modern Harmony Alliance" class="logo">
-      <div class="brand">MHA Explorer</div>
-      <div class="tagline">حيث العلم يُنشر</div>
+    <div class="field">
+      <label for="entityName">اسم الكيان المعلن</label>
+      <input type="text" id="entityName" maxlength="60"
+             placeholder="مثال: مركز النور التعليمي">
+      <span class="counter"><span id="entityCount">0</span>/60</span>
+    </div>
 
-      <div class="divider"></div>
+    <div class="field">
+      <label for="adDescription">وصف الإعلان</label>
+      <textarea id="adDescription" maxlength="300"
+                placeholder="وصف مختصر للمذكرة أو الملخص أو الدرس"></textarea>
+      <span class="counter"><span id="descCount">0</span>/300</span>
+    </div>
 
-      <div class="soon">SOON</div>
-      <div class="soon-sub">PI</div>
+    <div class="field">
+      <label for="tgContact">رابط التواصل (تليجرام)</label>
+      <input type="url" id="tgContact"
+             placeholder="https://t.me/username">
+    </div>
 
-      <p class="message">
-        <strong>MHA Explorer</strong> مساحة أكاديمية مستقلة،<br>
-        لتبادل المراجع الدراسية والمذكرات والملخصات.<br>
-        قريباً.
-      </p>
+    <button class="btn" id="saveBtn">حفظ الإعلان محلياً</button>
+    <p style="font-size:0.78rem; color:#999; text-align:center; margin-top:6px;">
+      يُحفظ الإعلان في متصفحك فقط، ولا يُرسل إلى أي سيرفر.
+    </p>
+  </div>
 
-      <span class="seal">印</span>
+  <!-- ========== الإعلانات المحفوظة ========== -->
+  <div class="card">
+    <h2>إعلاناتي المحفوظة</h2>
+    <div id="adsList"></div>
+    <div class="empty-state" id="emptyState">
+      <span class="icon">◆</span>
+      لا توجد إعلانات محفوظة بعد.
     </div>
   </div>
+
+  <!-- ========== التنبيه ========== -->
+  <div class="legal-notice">
+    <strong>تنبيه</strong>
+    باستخدامك هذا الموقع، فأنت تقر بأنك قرأت الحقول الثلاثة أدناه، وفهمتها، وتوافق عليها.
+    أي تعامل تقوم به على هذا الموقع هو على مسؤوليتك الشخصية وحدك.
+    لا يقدم الموقع أي ضمانات، ولا يتحمل المشغّلون أي مسؤولية عن أي خسارة أو نزاع أو ضرر.
+  </div>
+
+  <!-- ========== الحقول الثلاثة ========== -->
+  <details>
+    <summary>سياسة الاستخدام</summary>
+    <div>
+      <strong>MHA Explorer</strong> موقع أكاديمي مستقل، يديره مشغّلون متطوعون، هدفه نشر وتبادل المذكرات والملخصات.<br>
+      <strong>MHA</strong> هي نقاط ولاء داخلية ورمز مميز تُستخدم لتنظيم النشر داخل الموقع.<br>
+      النشر يتطلب حرق عدد من النقاط كالتزام تقني، والحرق نهائي.<br>
+      التعامل المباشر بين الناشر والمستخدم، والموقع لا يتدخل في أي اتفاق بينهما.
+    </div>
+  </details>
+
+  <details>
+    <summary>شروط الخدمة</summary>
+    <div>
+      باستخدامك الموقع، فأنت تقر بأنك قرأت هذه الشروط ووافقت عليها.<br>
+      الموقع مخصص لمن بلغ 18 عاماً على الأقل.<br>
+      <strong>MHA</strong> نقاط ولاء داخلية ورمز مميز، نطاق استخدامها هو الموقع.<br>
+      الحرق اليدوي يتم بالتنسيق مع الدعم.<br>
+      المشغّلون أفراد، وليسوا كياناً تجارياً.
+    </div>
+  </details>
+
+  <details>
+    <summary>التوصيف القانوني</summary>
+    <div>
+      <strong>MHA Explorer</strong> موقع أكاديمي مستقل.<br>
+      <strong>MHA</strong> نقاط ولاء داخلية ورمز مميز، تُشبه نقاط المتاجر الكبرى.<br>
+      نطاق استخدامها هو الموقع، وتُمنح مقابل نشاط داخلي.<br>
+      المشغّلون أفراد، لا كيان قانوني، ولا شركة، ولا مؤسسة.
+    </div>
+  </details>
+
+</main>
+
+<!-- ========== الفوتر ========== -->
+<footer>
+  <span class="seal">印</span>
+  MHA Explorer · Modern Harmony Alliance
+</footer>
+
+<!-- ========== زر العودة للأعلى ========== -->
+<button class="to-top" id="toTop" aria-label="العودة للأعلى">▲</button>
+
+<!-- ========== JavaScript ========== -->
+<script>
+  // ====== القيم ======
+  const CONFIG = {
+    telegramUser: "MHA_Explorer",   // ← ضع اسم مستخدم تليجرام هنا
+    storageKey: "MHA_ADS_V1"
+  };
+
+  // ====== أدوات مساعدة ======
+  function escapeHtml(str) {
+    return String(str)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
+  function formatDate(iso) {
+    const d = new Date(iso);
+    const pad = n => String(n).padStart(2, "0");
+    return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  }
+
+  function loadAds() {
+    try {
+      return JSON.parse(localStorage.getItem(CONFIG.storageKey) || "[]");
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function saveAds(ads) {
+    localStorage.setItem(CONFIG.storageKey, JSON.stringify(ads));
+  }
+
+  // ====== عدّادات الحقول ======
+  const entityInput = document.getElementById("entityName");
+  const descInput   = document.getElementById("adDescription");
+  const entityCount = document.getElementById("entityCount");
+  const descCount   = document.getElementById("descCount");
+
+  entityInput.addEventListener("input", () => {
+    entityCount.textContent = entityInput.value.length;
+  });
+  descInput.addEventListener("input", () => {
+    descCount.textContent = descInput.value.length;
+  });
+
+  // ====== حفظ الإعلان ======
+  const saveBtn = document.getElementById("saveBtn");
+
+  saveBtn.addEventListener("click", () => {
+    const entity = entityInput.value.trim();
+    const desc   = descInput.value.trim();
+    const tg     = document.getElementById("tgContact").value.trim();
+
+    if (!entity || !desc || !tg) {
+      alert("يرجى إكمال الحقول الثلاثة.");
+      return;
+    }
+    if (!/^https?:\/\/(t\.me|telegram\.me)\//i.test(tg)) {
+      alert("رابط التواصل يجب أن يبدأ بـ https://t.me/");
+      return;
+    }
+
+    const ads = loadAds();
+    ads.unshift({
+      id: Date.now(),
+      entity: entity,
+      description: desc,
+      telegram: tg,
+      createdAt: new Date().toISOString()
+    });
+    saveAds(ads);
+
+    entityInput.value = "";
+    descInput.value = "";
+    document.getElementById("tgContact").value = "";
+    entityCount.textContent = "0";
+    descCount.textContent = "0";
+
+    renderAds();
+  });
+
+  // ====== عرض الإعلانات ======
+  function renderAds() {
+    const ads = loadAds();
+    const list = document.getElementById("adsList");
+    const empty = document.getElementById("emptyState");
+
+    if (ads.length === 0) {
+      list.innerHTML = "";
+      empty.style.display = "block";
+      return;
+    }
+    empty.style.display = "none";
+
+    list.innerHTML = ads.map(ad => {
+      const msg =
+        "السلام عليكم،\n" +
+        "أرغب في نشر الإعلان التالي:\n\n" +
+        "اسم الكيان: " + ad.entity + "\n" +
+        "وصف الإعلان: " + ad.description + "\n" +
+        "رابط التواصل: " + ad.telegram;
+
+      const tgUrl = "https://t.me/" + CONFIG.telegramUser +
+                    "?text=" + encodeURIComponent(msg);
+
+      return `
+        <div class="ad-card" data-id="${ad.id}">
+          <div class="ad-entity">◆ ${escapeHtml(ad.entity)}</div>
+          <div class="ad-desc">${escapeHtml(ad.description)}</div>
+          <div class="ad-tg">${escapeHtml(ad.telegram)}</div>
+          <div class="ad-date">${formatDate(ad.createdAt)}</div>
+          <div class="ad-actions">
+            <a class="btn btn-small" href="${tgUrl}" target="_blank" rel="noopener">إرسال للحرق</a>
+            <button class="btn btn-small btn-danger" data-delete="${ad.id}">حذف</button>
+          </div>
+        </div>
+      `;
+    }).join("");
+
+    list.querySelectorAll("[data-delete]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const id = Number(btn.dataset.delete);
+        if (!confirm("هل أنت متأكد من حذف هذا الإعلان؟")) return;
+        const ads = loadAds().filter(a => a.id !== id);
+        saveAds(ads);
+        renderAds();
+      });
+    });
+  }
+
+  // ====== تشغيل أولي ======
+  renderAds();
+
+  // ====== زر العودة للأعلى ======
+  const toTop = document.getElementById("toTop");
+  window.addEventListener("scroll", () => {
+    if (window.scrollY > 300) toTop.classList.add("show");
+    else toTop.classList.remove("show");
+  });
+  toTop.addEventListener("click", () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  });
+</script>
 
 </body>
 </html>
