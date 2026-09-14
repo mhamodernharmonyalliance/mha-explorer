@@ -4,19 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<!-- ===== SEO الأساسي ===== -->
+<!-- ===== SEO ===== -->
 <title>MHA Explorer — حيث العلم يُنشر | منصة أكاديمية</title>
-<meta name="description" content="MHA Explorer — منصة أكاديمية مستقلة لنشر وتبادل المذكرات والملخصات الدراسية على البلوكتشين. حيث العلم يُنشر.">
-<meta name="keywords" content="MHA, MHA Explorer, منصة أكاديمية, مذكرات, ملخصات, مراجع دراسية, Polygon, Web3">
+<meta name="description" content="MHA Explorer — منصة أكاديمية مستقلة لنشر وتبادل المذكرات والملخصات الدراسية.">
+<meta name="keywords" content="MHA, MHA Explorer, منصة أكاديمية, مذكرات, ملخصات, مراجع دراسية">
 <meta name="author" content="MHA Explorer">
 <meta name="robots" content="index, follow">
 <meta name="language" content="Arabic">
-<meta name="revisit-after" content="7 days">
-
-<!-- ===== التحقق من Google ===== -->
 <meta name="google-site-verification" content="google7f4fbd39717d3a1c">
-
-<!-- ===== Canonical ===== -->
 <link rel="canonical" href="https://mha-explorer.mhamodernharmonyalliance.workers.dev/">
 
 <!-- ===== Open Graph ===== -->
@@ -26,15 +21,14 @@
 <meta property="og:description" content="منصة أكاديمية مستقلة لنشر وتبادل المذكرات والملخصات الدراسية.">
 <meta property="og:image" content="https://mha-explorer.mhamodernharmonyalliance.workers.dev/mha-logo.png">
 <meta property="og:locale" content="ar_AR">
-<meta property="og:site_name" content="MHA Explorer">
 
-<!-- ===== Twitter Card ===== -->
+<!-- ===== Twitter ===== -->
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="MHA Explorer — حيث العلم يُنشر">
 <meta name="twitter:description" content="منصة أكاديمية مستقلة لنشر وتبادل المذكرات والملخصات الدراسية.">
 <meta name="twitter:image" content="https://mha-explorer.mhamodernharmonyalliance.workers.dev/mha-logo.png">
 
-<!-- ===== PWA / Manifest ===== -->
+<!-- ===== PWA ===== -->
 <link rel="manifest" href="/manifest.json">
 <link rel="icon" type="image/png" href="/mha-logo.png">
 <link rel="apple-touch-icon" href="/mha-logo.png">
@@ -51,10 +45,7 @@
   "logo": "https://mha-explorer.mhamodernharmonyalliance.workers.dev/mha-logo.png",
   "description": "منصة أكاديمية مستقلة لنشر وتبادل المذكرات والملخصات الدراسية.",
   "slogan": "حيث العلم يُنشر",
-  "inLanguage": "ar",
-  "sameAs": [
-    "https://polygonscan.com/address/0xc88ee2e4b83b5bef2c5c34333a1357026487efae"
-  ]
+  "inLanguage": "ar"
 }
 </script>
 
@@ -91,7 +82,6 @@
   }
   .hero p { color: var(--crimson); letter-spacing: 2px; margin-top: 4px; }
 
-  /* ===== شريط الإعلان المتحرك ===== */
   .marquee-bar {
     background: var(--navy);
     border: 1px solid var(--gold);
@@ -168,6 +158,31 @@
     font-weight: 400;
   }
 
+  .field { margin-bottom: 14px; }
+  .field-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+  }
+  .field-head label {
+    color: var(--navy);
+    font-size: 0.88rem;
+    letter-spacing: 1px;
+  }
+  .field-head label::before {
+    content: "◆ ";
+    color: var(--gold);
+    font-size: 0.7rem;
+  }
+  .field-meta {
+    font-size: 0.72rem;
+    color: #999;
+    font-family: 'Courier New', monospace;
+    letter-spacing: 0.5px;
+  }
+  .field-meta.warn { color: var(--crimson); font-weight: 700; }
+
   input, textarea {
     width: 100%;
     padding: 10px 12px;
@@ -176,14 +191,14 @@
     border-radius: 3px;
     font-family: inherit;
     font-size: 1rem;
-    margin-bottom: 12px;
     resize: vertical;
   }
   input:focus, textarea:focus {
     outline: none;
     border-color: var(--navy);
+    background: #fff;
   }
-  textarea { min-height: 80px; }
+  textarea { min-height: 120px; line-height: 1.8; }
 
   button {
     width: 100%;
@@ -217,6 +232,8 @@
     color: #555;
     font-size: 0.9rem;
     margin-bottom: 8px;
+    white-space: pre-wrap;
+    word-wrap: break-word;
   }
   .ad-tg {
     color: var(--gold);
@@ -308,9 +325,30 @@
 
   <div class="card">
     <h2>نموذج النشر</h2>
-    <input id="entity" maxlength="60" placeholder="اسم الكيان المعلن">
-    <textarea id="desc" maxlength="300" placeholder="وصف الإعلان"></textarea>
-    <input id="tg" placeholder="https://t.me/username">
+
+    <div class="field">
+      <div class="field-head">
+        <label for="entity">اسم الكيان المعلن</label>
+        <span class="field-meta" id="entityMeta">0 كلمة · 0/80</span>
+      </div>
+      <input id="entity" maxlength="80" placeholder="مثال: مركز النور التعليمي">
+    </div>
+
+    <div class="field">
+      <div class="field-head">
+        <label for="desc">وصف الإعلان</label>
+        <span class="field-meta" id="descMeta">0 كلمة · 0/1500</span>
+      </div>
+      <textarea id="desc" maxlength="1500" placeholder="اكتب وصفاً واضحاً للمذكرة أو الدرس أو الكورس"></textarea>
+    </div>
+
+    <div class="field">
+      <div class="field-head">
+        <label for="tg">رابط التواصل (تليجرام)</label>
+      </div>
+      <input id="tg" placeholder="https://t.me/username">
+    </div>
+
     <button id="publish">نشر الإعلان</button>
   </div>
 
@@ -335,7 +373,10 @@
   const FIREBASE_URL = "https://mhaexplorer-ac7a7-default-rtdb.europe-west1.firebasedatabase.app";
   const KEY_STORE = "MHA_MY_KEYS";
   const RATE_MS = 5 * 60 * 1000;
-  const PAGE_SIZE = 10;   // عدد الإعلانات في كل تحميل
+  const PAGE_SIZE = 10;
+
+  const MAX_ENTITY = 80;
+  const MAX_DESC = 1500;
 
   const $entity = document.getElementById("entity");
   const $desc   = document.getElementById("desc");
@@ -344,10 +385,11 @@
   const $list   = document.getElementById("list");
   const $loadMore = document.getElementById("loadMore");
   const $counter = document.getElementById("counter");
+  const $entityMeta = document.getElementById("entityMeta");
+  const $descMeta = document.getElementById("descMeta");
 
-  // ====== حالة العرض ======
-  let allAds = [];        // كل الإعلانات المحمّلة من Firebase
-  let shownCount = 0;     // عدد الإعلانات المعروضة
+  let allAds = [];
+  let shownCount = 0;
 
   // ====== أدوات ======
   function esc(s) {
@@ -355,6 +397,22 @@
       "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
     })[c]);
   }
+
+  function wordCount(text) {
+    const t = text.trim();
+    if (!t) return 0;
+    return t.split(/\s+/).length;
+  }
+
+  function updateMeta($input, $meta, max) {
+    const len = $input.value.length;
+    const words = wordCount($input.value);
+    $meta.textContent = `${words} كلمة · ${len}/${max}`;
+    $meta.classList.toggle("warn", len > max * 0.9);
+  }
+
+  $entity.addEventListener("input", () => updateMeta($entity, $entityMeta, MAX_ENTITY));
+  $desc.addEventListener("input", () => updateMeta($desc, $descMeta, MAX_DESC));
 
   function getMyKeys() {
     try { return JSON.parse(localStorage.getItem(KEY_STORE) || "{}"); }
@@ -382,6 +440,14 @@
 
     if (!entity || !desc || !tg) {
       alert("املأ الحقول الثلاثة.");
+      return;
+    }
+    if (entity.length > MAX_ENTITY) {
+      alert(`اسم الكيان يجب ألا يتجاوز ${MAX_ENTITY} حرفاً.`);
+      return;
+    }
+    if (desc.length > MAX_DESC) {
+      alert(`الوصف يجب ألا يتجاوز ${MAX_DESC} حرفاً.`);
       return;
     }
     if (!/^https?:\/\/(t\.me|telegram\.me)\//i.test(tg)) {
@@ -424,6 +490,8 @@
       $entity.value = "";
       $desc.value = "";
       $tg.value = "";
+      updateMeta($entity, $entityMeta, MAX_ENTITY);
+      updateMeta($desc, $descMeta, MAX_DESC);
 
       await fetchAds();
       alert("تم النشر!");
@@ -435,7 +503,7 @@
     }
   });
 
-  // ====== جلب كل الإعلانات من Firebase ======
+  // ====== جلب الإعلانات ======
   async function fetchAds() {
     try {
       const res = await fetch(FIREBASE_URL + "/ads.json");
@@ -498,14 +566,12 @@
     $list.insertAdjacentHTML("beforeend", html);
     shownCount += nextBatch.length;
 
-    // ربط أزرار الحذف في الدفعة الجديدة
     $list.querySelectorAll("[data-del]").forEach(b => {
       if (b.dataset.bound) return;
       b.dataset.bound = "1";
       b.addEventListener("click", () => deleteAd(b.dataset.del));
     });
 
-    // إظهار/إخفاء زر "تحميل المزيد"
     if (shownCount < allAds.length) {
       $loadMore.style.display = "block";
       $loadMore.textContent = `تحميل المزيد (${allAds.length - shownCount})`;
@@ -514,7 +580,6 @@
     }
   }
 
-  // ====== زر تحميل المزيد ======
   $loadMore.addEventListener("click", renderNextPage);
 
   // ====== حذف الإعلان ======
