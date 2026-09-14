@@ -1,0 +1,23 @@
+{
+  "name": "MHA Explorer",
+  "short_name": "MHA",
+  "description": "منصة أكاديمية لنشر وتبادل المراجع الدراسية",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F5F0E6",
+  "theme_color": "#1B3A5C",
+  "lang": "ar",
+  "dir": "rtl",
+  "icons": [
+    {
+      "src": "mha-logo.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "mha-logo.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
