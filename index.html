@@ -19,7 +19,7 @@
 <!-- ===== Canonical ===== -->
 <link rel="canonical" href="https://mha-explorer.mhamodernharmonyalliance.workers.dev/">
 
-<!-- ===== Open Graph (للمشاركة على تليجرام وتويتر) ===== -->
+<!-- ===== Open Graph ===== -->
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://mha-explorer.mhamodernharmonyalliance.workers.dev/">
 <meta property="og:title" content="MHA Explorer — حيث العلم يُنشر">
@@ -40,7 +40,7 @@
 <link rel="apple-touch-icon" href="/mha-logo.png">
 <meta name="theme-color" content="#1B3A5C">
 
-<!-- ===== JSON-LD (بيانات منظمة لمحركات البحث) ===== -->
+<!-- ===== JSON-LD ===== -->
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -78,9 +78,9 @@
 
   .hero {
     text-align: center;
-    padding: 30px 0;
+    padding: 30px 0 20px;
     border-bottom: 1px solid var(--border);
-    margin-bottom: 30px;
+    margin-bottom: 24px;
   }
   .hero img { width: 120px; height: 120px; object-fit: contain; }
   .hero h1 {
@@ -90,17 +90,57 @@
     font-size: 1.8rem;
   }
   .hero p { color: var(--crimson); letter-spacing: 2px; margin-top: 4px; }
-  .soon {
-    display: inline-block;
-    margin-top: 14px;
-    padding: 6px 22px;
-    background: #fff;
+
+  /* ===== شريط الإعلان المتحرك ===== */
+  .marquee-bar {
+    background: var(--navy);
     border: 1px solid var(--gold);
     border-radius: 30px;
-    color: var(--navy);
-    letter-spacing: 6px;
-    font-size: 0.8rem;
+    margin-top: 16px;
+    padding: 10px 0;
+    overflow: hidden;
+    position: relative;
+  }
+  .marquee-bar::before,
+  .marquee-bar::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    width: 30px;
+    height: 100%;
+    z-index: 2;
+    pointer-events: none;
+  }
+  .marquee-bar::before {
+    right: 0;
+    background: linear-gradient(to left, var(--navy), transparent);
+  }
+  .marquee-bar::after {
+    left: 0;
+    background: linear-gradient(to right, var(--navy), transparent);
+  }
+  .marquee-track {
+    display: inline-block;
+    white-space: nowrap;
+    animation: marquee 18s linear infinite;
+    padding-right: 100%;
+  }
+  .marquee-track span {
+    color: var(--gold);
+    font-size: 0.9rem;
+    letter-spacing: 3px;
     font-weight: 700;
+    padding: 0 40px;
+  }
+  .marquee-track span::before {
+    content: "◆";
+    color: var(--paper);
+    margin-left: 12px;
+    font-size: 0.7rem;
+  }
+  @keyframes marquee {
+    0%   { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
   }
 
   .card {
@@ -116,8 +156,17 @@
     font-size: 1rem;
     margin-bottom: 14px;
     letter-spacing: 1px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
   }
   .card h2::before { content: "◆ "; color: var(--gold); }
+  .counter-badge {
+    font-size: 0.72rem;
+    color: #999;
+    letter-spacing: 1px;
+    font-weight: 400;
+  }
 
   input, textarea {
     width: 100%;
@@ -208,6 +257,18 @@
   }
   .btn-delete:hover { background: #8B1A1A; color: #fff; }
 
+  .btn-load-more {
+    background: transparent;
+    color: var(--navy);
+    border: 1px dashed var(--border);
+    margin-top: 8px;
+  }
+  .btn-load-more:hover {
+    background: var(--gold);
+    color: var(--navy);
+    border-style: solid;
+  }
+
   .empty {
     text-align: center;
     color: #aaa;
@@ -233,10 +294,16 @@
 <div class="wrap">
 
   <header class="hero">
-    <img src="mha-logo.png" alt="MHA Explorer — شعار المنصة الأكاديمية">
+    <img src="mha-logo.png" alt="MHA Explorer">
     <h1>MHA Explorer</h1>
     <p>حيث العلم يُنشر</p>
-    <div class="soon">SOON</div>
+    <div class="marquee-bar">
+      <div class="marquee-track">
+        <span>MHA حيث الكل يشارك</span>
+        <span>MHA حيث الكل يشارك</span>
+        <span>MHA حيث الكل يشارك</span>
+      </div>
+    </div>
   </header>
 
   <div class="card">
@@ -248,8 +315,12 @@
   </div>
 
   <div class="card">
-    <h2>الإعلانات المنشورة</h2>
+    <h2>
+      الإعلانات المنشورة
+      <span class="counter-badge" id="counter">0</span>
+    </h2>
     <div id="list"><div class="empty">جاري التحميل...</div></div>
+    <button id="loadMore" class="btn-load-more" style="display:none;">تحميل المزيد</button>
   </div>
 
   <div class="notice">
@@ -264,13 +335,21 @@
   const FIREBASE_URL = "https://mhaexplorer-ac7a7-default-rtdb.europe-west1.firebasedatabase.app";
   const KEY_STORE = "MHA_MY_KEYS";
   const RATE_MS = 5 * 60 * 1000;
+  const PAGE_SIZE = 10;   // عدد الإعلانات في كل تحميل
 
   const $entity = document.getElementById("entity");
   const $desc   = document.getElementById("desc");
   const $tg     = document.getElementById("tg");
   const $btn    = document.getElementById("publish");
   const $list   = document.getElementById("list");
+  const $loadMore = document.getElementById("loadMore");
+  const $counter = document.getElementById("counter");
 
+  // ====== حالة العرض ======
+  let allAds = [];        // كل الإعلانات المحمّلة من Firebase
+  let shownCount = 0;     // عدد الإعلانات المعروضة
+
+  // ====== أدوات ======
   function esc(s) {
     return String(s).replace(/[&<>"']/g, c => ({
       "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
@@ -295,6 +374,7 @@
     return Math.random().toString(36).slice(2) + Date.now().toString(36);
   }
 
+  // ====== نشر الإعلان ======
   $btn.addEventListener("click", async () => {
     const entity = $entity.value.trim();
     const desc   = $desc.value.trim();
@@ -345,7 +425,7 @@
       $desc.value = "";
       $tg.value = "";
 
-      await loadAds();
+      await fetchAds();
       alert("تم النشر!");
     } catch (err) {
       alert("تعذر النشر.");
@@ -355,53 +435,89 @@
     }
   });
 
-  async function loadAds() {
+  // ====== جلب كل الإعلانات من Firebase ======
+  async function fetchAds() {
     try {
       const res = await fetch(FIREBASE_URL + "/ads.json");
       const data = await res.json();
 
       if (!data) {
-        $list.innerHTML = '<div class="empty">لا توجد إعلانات بعد.</div>';
-        return;
+        allAds = [];
+      } else {
+        allAds = Object.keys(data)
+          .map(id => ({ id, ...data[id] }))
+          .sort((a, b) => b.createdAt - a.createdAt);
       }
 
-      const myKeys = getMyKeys();
-      const ads = Object.keys(data)
-        .map(id => ({ id, ...data[id] }))
-        .sort((a, b) => b.createdAt - a.createdAt);
-
-      $list.innerHTML = ads.map(ad => {
-        const d = new Date(ad.createdAt);
-        const date = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
-        const isMine = myKeys[ad.id] === ad.deleteKey;
-
-        return `
-          <div class="ad">
-            <div class="ad-entity">
-              ${isMine ? '<span class="ad-mine">إعلاني</span>' : ''}
-              ◆ ${esc(ad.entity)}
-            </div>
-            <div class="ad-desc">${esc(ad.description)}</div>
-            <a class="ad-tg" href="${esc(ad.telegram)}" target="_blank" rel="noopener">${esc(ad.telegram)}</a>
-            <div class="ad-date">${date}</div>
-            ${isMine ? `
-              <div class="ad-actions">
-                <button class="btn-delete" data-del="${ad.id}">حذف الإعلان</button>
-              </div>
-            ` : ''}
-          </div>
-        `;
-      }).join("");
-
-      $list.querySelectorAll("[data-del]").forEach(b => {
-        b.addEventListener("click", () => deleteAd(b.dataset.del));
-      });
+      shownCount = 0;
+      $list.innerHTML = "";
+      $counter.textContent = allAds.length;
+      renderNextPage();
 
     } catch (err) {
       $list.innerHTML = '<div class="empty">تعذر التحميل.</div>';
     }
   }
 
+  // ====== عرض الدفعة التالية ======
+  function renderNextPage() {
+    if (allAds.length === 0) {
+      $list.innerHTML = '<div class="empty">لا توجد إعلانات بعد.</div>';
+      $loadMore.style.display = "none";
+      return;
+    }
+
+    const myKeys = getMyKeys();
+    const nextBatch = allAds.slice(shownCount, shownCount + PAGE_SIZE);
+
+    if (shownCount === 0) $list.innerHTML = "";
+
+    const html = nextBatch.map(ad => {
+      const d = new Date(ad.createdAt);
+      const date = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+      const isMine = myKeys[ad.id] === ad.deleteKey;
+
+      return `
+        <div class="ad">
+          <div class="ad-entity">
+            ${isMine ? '<span class="ad-mine">إعلاني</span>' : ''}
+            ◆ ${esc(ad.entity)}
+          </div>
+          <div class="ad-desc">${esc(ad.description)}</div>
+          <a class="ad-tg" href="${esc(ad.telegram)}" target="_blank" rel="noopener">${esc(ad.telegram)}</a>
+          <div class="ad-date">${date}</div>
+          ${isMine ? `
+            <div class="ad-actions">
+              <button class="btn-delete" data-del="${ad.id}">حذف الإعلان</button>
+            </div>
+          ` : ''}
+        </div>
+      `;
+    }).join("");
+
+    $list.insertAdjacentHTML("beforeend", html);
+    shownCount += nextBatch.length;
+
+    // ربط أزرار الحذف في الدفعة الجديدة
+    $list.querySelectorAll("[data-del]").forEach(b => {
+      if (b.dataset.bound) return;
+      b.dataset.bound = "1";
+      b.addEventListener("click", () => deleteAd(b.dataset.del));
+    });
+
+    // إظهار/إخفاء زر "تحميل المزيد"
+    if (shownCount < allAds.length) {
+      $loadMore.style.display = "block";
+      $loadMore.textContent = `تحميل المزيد (${allAds.length - shownCount})`;
+    } else {
+      $loadMore.style.display = "none";
+    }
+  }
+
+  // ====== زر تحميل المزيد ======
+  $loadMore.addEventListener("click", renderNextPage);
+
+  // ====== حذف الإعلان ======
   async function deleteAd(id) {
     if (!confirm("هل أنت متأكد من حذف هذا الإعلان؟")) return;
 
@@ -429,14 +545,15 @@
       if (!del.ok) throw new Error("fail");
 
       removeMyKey(id);
-      await loadAds();
+      await fetchAds();
       alert("تم الحذف.");
     } catch (err) {
       alert("تعذر الحذف.");
     }
   }
 
-  loadAds();
+  // ====== تشغيل أولي ======
+  fetchAds();
 </script>
 
 </body>
