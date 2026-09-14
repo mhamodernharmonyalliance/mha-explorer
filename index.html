@@ -362,6 +362,7 @@
   // ====== الإعداد ======
   const FIREBASE_URL = "https://mhaexplorer-ac7a7-default-rtdb.europe-west1.firebasedatabase.app";
   const KEY_STORE = "MHA_MY_KEYS";
+  const AUTHOR_STORE = "MHA_AUTHOR_ID";          // ← جديد
   const RATE_MS = 5 * 60 * 1000;
   const PAGE_SIZE = 10;
 
@@ -421,6 +422,17 @@
     return Math.random().toString(36).slice(2) + Date.now().toString(36);
   }
 
+  // ← جديد: معرّف دائم للمتصفح الحالي
+  function getMyAuthorId() {
+    let id = localStorage.getItem(AUTHOR_STORE);
+    if (!id) {
+      id = "u_" + Math.random().toString(36).slice(2) + Date.now().toString(36);
+      localStorage.setItem(AUTHOR_STORE, id);
+    }
+    return id;
+  }
+  const MY_AUTHOR_ID = getMyAuthorId();          // ← جديد
+
   $btn.addEventListener("click", async () => {
     const entity = $entity.value.trim();
     const desc   = $desc.value.trim();
@@ -465,7 +477,8 @@
           description: desc,
           telegram: tg,
           createdAt: now,
-          deleteKey: key
+          deleteKey: key,
+          authorId: MY_AUTHOR_ID            // ← جديد
         })
       });
 
@@ -529,7 +542,11 @@
     const html = nextBatch.map(ad => {
       const d = new Date(ad.createdAt);
       const date = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
-      const isMine = myKeys[ad.id] === ad.deleteKey;
+
+      // ← جديد: يظهر الزر إذا طابق authorId أو deleteKey
+      const byAuthor = ad.authorId && ad.authorId === MY_AUTHOR_ID;
+      const byKey    = myKeys[ad.id] === ad.deleteKey;
+      const isMine   = byAuthor || byKey;
 
       return `
         <div class="ad">
@@ -574,17 +591,16 @@
     const myKeys = getMyKeys();
     const myKey = myKeys[id];
 
-    if (!myKey) {
-      alert("لا تملك صلاحية حذف هذا الإعلان.");
-      return;
-    }
-
     try {
       const res = await fetch(`${FIREBASE_URL}/ads/${id}.json`);
       const ad = await res.json();
 
-      if (!ad || ad.deleteKey !== myKey) {
-        alert("المفتاح غير صحيح.");
+      // ← جديد: نتحقق من authorId أو deleteKey
+      const byAuthor = ad && ad.authorId && ad.authorId === MY_AUTHOR_ID;
+      const byKey    = ad && myKey && ad.deleteKey === myKey;
+
+      if (!ad || (!byAuthor && !byKey)) {
+        alert("لا تملك صلاحية حذف هذا الإعلان.");
         return;
       }
 
