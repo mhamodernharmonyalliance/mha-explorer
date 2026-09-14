@@ -7,10 +7,8 @@
 <!-- ===== SEO ===== -->
 <title>MHA Explorer — حيث العلم يُنشر | منصة أكاديمية</title>
 <meta name="description" content="MHA Explorer — منصة أكاديمية مستقلة لنشر وتبادل المذكرات والملخصات الدراسية.">
-<meta name="keywords" content="MHA, MHA Explorer, منصة أكاديمية, مذكرات, ملخصات, مراجع دراسية">
 <meta name="author" content="MHA Explorer">
 <meta name="robots" content="index, follow">
-<meta name="language" content="Arabic">
 <meta name="google-site-verification" content="google7f4fbd39717d3a1c">
 <link rel="canonical" href="https://mha-explorer.mhaapp.workers.dev/">
 
@@ -33,6 +31,11 @@
 <link rel="icon" type="image/png" href="/mha-logo.png">
 <link rel="apple-touch-icon" href="/mha-logo.png">
 <meta name="theme-color" content="#1B3A5C">
+
+<!-- ===== الخطوط ===== -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Naskh+Arabic:wght@400;700&family=Noto+Serif:wght@400;700&display=swap" rel="stylesheet">
 
 <!-- ===== JSON-LD ===== -->
 <script type="application/ld+json">
@@ -59,14 +62,13 @@
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
-    font-family: 'Noto Serif', serif;
+    font-family: 'Noto Naskh Arabic', 'Noto Serif', serif;
     background: var(--paper);
     color: #1A1A1A;
     line-height: 1.8;
     padding: 20px;
   }
   .wrap { max-width: 640px; margin: 0 auto; }
-
   .hero {
     text-align: center;
     padding: 30px 0 20px;
@@ -81,7 +83,6 @@
     font-size: 1.8rem;
   }
   .hero p { color: var(--crimson); letter-spacing: 2px; margin-top: 4px; }
-
   .marquee-bar {
     background: var(--navy);
     border: 1px solid var(--gold);
@@ -132,7 +133,6 @@
     0%   { transform: translateX(-100%); }
     100% { transform: translateX(100%); }
   }
-
   .card {
     background: #fff;
     border: 1px solid var(--border);
@@ -157,7 +157,6 @@
     letter-spacing: 1px;
     font-weight: 400;
   }
-
   .field { margin-bottom: 14px; }
   .field-head {
     display: flex;
@@ -182,7 +181,6 @@
     letter-spacing: 0.5px;
   }
   .field-meta.warn { color: var(--crimson); font-weight: 700; }
-
   input, textarea {
     width: 100%;
     padding: 10px 12px;
@@ -199,7 +197,6 @@
     background: #fff;
   }
   textarea { min-height: 120px; line-height: 1.8; }
-
   button {
     width: 100%;
     padding: 12px;
@@ -215,7 +212,6 @@
   }
   button:hover { background: var(--gold); color: var(--navy); }
   button:disabled { background: #ccc; cursor: not-allowed; }
-
   .ad {
     background: #FDFBF6;
     border: 1px solid var(--border);
@@ -273,7 +269,6 @@
     letter-spacing: 1px;
   }
   .btn-delete:hover { background: #8B1A1A; color: #fff; }
-
   .btn-load-more {
     background: transparent;
     color: var(--navy);
@@ -285,7 +280,6 @@
     color: var(--navy);
     border-style: solid;
   }
-
   .empty {
     text-align: center;
     color: #aaa;
@@ -325,7 +319,6 @@
 
   <div class="card">
     <h2>نموذج النشر</h2>
-
     <div class="field">
       <div class="field-head">
         <label for="entity">اسم الكيان المعلن</label>
@@ -333,7 +326,6 @@
       </div>
       <input id="entity" maxlength="80" placeholder="مثال: مركز النور التعليمي">
     </div>
-
     <div class="field">
       <div class="field-head">
         <label for="desc">وصف الإعلان</label>
@@ -341,14 +333,12 @@
       </div>
       <textarea id="desc" maxlength="1500" placeholder="اكتب وصفاً واضحاً للمذكرة أو الدرس أو الكورس"></textarea>
     </div>
-
     <div class="field">
       <div class="field-head">
         <label for="tg">رابط التواصل (تليجرام)</label>
       </div>
       <input id="tg" placeholder="https://t.me/username">
     </div>
-
     <button id="publish">نشر الإعلان</button>
   </div>
 
@@ -391,7 +381,6 @@
   let allAds = [];
   let shownCount = 0;
 
-  // ====== أدوات ======
   function esc(s) {
     return String(s).replace(/[&<>"']/g, c => ({
       "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
@@ -432,7 +421,6 @@
     return Math.random().toString(36).slice(2) + Date.now().toString(36);
   }
 
-  // ====== نشر الإعلان ======
   $btn.addEventListener("click", async () => {
     const entity = $entity.value.trim();
     const desc   = $desc.value.trim();
@@ -503,7 +491,6 @@
     }
   });
 
-  // ====== جلب الإعلانات ======
   async function fetchAds() {
     try {
       const res = await fetch(FIREBASE_URL + "/ads.json");
@@ -527,7 +514,6 @@
     }
   }
 
-  // ====== عرض الدفعة التالية ======
   function renderNextPage() {
     if (allAds.length === 0) {
       $list.innerHTML = '<div class="empty">لا توجد إعلانات بعد.</div>';
@@ -582,7 +568,6 @@
 
   $loadMore.addEventListener("click", renderNextPage);
 
-  // ====== حذف الإعلان ======
   async function deleteAd(id) {
     if (!confirm("هل أنت متأكد من حذف هذا الإعلان؟")) return;
 
@@ -617,8 +602,14 @@
     }
   }
 
-  // ====== تشغيل أولي ======
   fetchAds();
+
+  // ====== تسجيل Service Worker ======
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/service-worker.js').catch(() => {});
+    });
+  }
 </script>
 
 </body>
