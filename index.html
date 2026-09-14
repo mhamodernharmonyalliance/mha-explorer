@@ -3,7 +3,61 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MHA Explorer — Soon</title>
+
+<!-- ===== SEO الأساسي ===== -->
+<title>MHA Explorer — حيث العلم يُنشر | منصة أكاديمية</title>
+<meta name="description" content="MHA Explorer — منصة أكاديمية مستقلة لنشر وتبادل المذكرات والملخصات الدراسية على البلوكتشين. حيث العلم يُنشر.">
+<meta name="keywords" content="MHA, MHA Explorer, منصة أكاديمية, مذكرات, ملخصات, مراجع دراسية, Polygon, Web3">
+<meta name="author" content="MHA Explorer">
+<meta name="robots" content="index, follow">
+<meta name="language" content="Arabic">
+<meta name="revisit-after" content="7 days">
+
+<!-- ===== التحقق من Google ===== -->
+<meta name="google-site-verification" content="google7f4fbd39717d3a1c">
+
+<!-- ===== Canonical ===== -->
+<link rel="canonical" href="https://mha-explorer.mhamodernharmonyalliance.workers.dev/">
+
+<!-- ===== Open Graph (للمشاركة على تليجرام وتويتر) ===== -->
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://mha-explorer.mhamodernharmonyalliance.workers.dev/">
+<meta property="og:title" content="MHA Explorer — حيث العلم يُنشر">
+<meta property="og:description" content="منصة أكاديمية مستقلة لنشر وتبادل المذكرات والملخصات الدراسية.">
+<meta property="og:image" content="https://mha-explorer.mhamodernharmonyalliance.workers.dev/mha-logo.png">
+<meta property="og:locale" content="ar_AR">
+<meta property="og:site_name" content="MHA Explorer">
+
+<!-- ===== Twitter Card ===== -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="MHA Explorer — حيث العلم يُنشر">
+<meta name="twitter:description" content="منصة أكاديمية مستقلة لنشر وتبادل المذكرات والملخصات الدراسية.">
+<meta name="twitter:image" content="https://mha-explorer.mhamodernharmonyalliance.workers.dev/mha-logo.png">
+
+<!-- ===== PWA / Manifest ===== -->
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" type="image/png" href="/mha-logo.png">
+<link rel="apple-touch-icon" href="/mha-logo.png">
+<meta name="theme-color" content="#1B3A5C">
+
+<!-- ===== JSON-LD (بيانات منظمة لمحركات البحث) ===== -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "EducationalOrganization",
+  "name": "MHA Explorer",
+  "alternateName": "MHA",
+  "url": "https://mha-explorer.mhamodernharmonyalliance.workers.dev/",
+  "logo": "https://mha-explorer.mhamodernharmonyalliance.workers.dev/mha-logo.png",
+  "description": "منصة أكاديمية مستقلة لنشر وتبادل المذكرات والملخصات الدراسية.",
+  "slogan": "حيث العلم يُنشر",
+  "inLanguage": "ar",
+  "sameAs": [
+    "https://polygonscan.com/address/0xc88ee2e4b83b5bef2c5c34333a1357026487efae"
+  ]
+}
+</script>
+
 <style>
   :root {
     --navy: #1B3A5C;
@@ -179,7 +233,7 @@
 <div class="wrap">
 
   <header class="hero">
-    <img src="mha-logo.png" alt="MHA">
+    <img src="mha-logo.png" alt="MHA Explorer — شعار المنصة الأكاديمية">
     <h1>MHA Explorer</h1>
     <p>حيث العلم يُنشر</p>
     <div class="soon">SOON</div>
@@ -206,19 +260,17 @@
 </div>
 
 <script>
-  // ====== الإعداد (جاهز) ======
+  // ====== الإعداد ======
   const FIREBASE_URL = "https://mhaexplorer-ac7a7-default-rtdb.europe-west1.firebasedatabase.app";
   const KEY_STORE = "MHA_MY_KEYS";
   const RATE_MS = 5 * 60 * 1000;
 
-  // ====== عناصر الصفحة ======
   const $entity = document.getElementById("entity");
   const $desc   = document.getElementById("desc");
   const $tg     = document.getElementById("tg");
   const $btn    = document.getElementById("publish");
   const $list   = document.getElementById("list");
 
-  // ====== أدوات ======
   function esc(s) {
     return String(s).replace(/[&<>"']/g, c => ({
       "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
@@ -243,7 +295,6 @@
     return Math.random().toString(36).slice(2) + Date.now().toString(36);
   }
 
-  // ====== نشر الإعلان ======
   $btn.addEventListener("click", async () => {
     const entity = $entity.value.trim();
     const desc   = $desc.value.trim();
@@ -304,7 +355,6 @@
     }
   });
 
-  // ====== تحميل الإعلانات ======
   async function loadAds() {
     try {
       const res = await fetch(FIREBASE_URL + "/ads.json");
@@ -352,7 +402,6 @@
     }
   }
 
-  // ====== حذف الإعلان ======
   async function deleteAd(id) {
     if (!confirm("هل أنت متأكد من حذف هذا الإعلان؟")) return;
 
@@ -387,7 +436,6 @@
     }
   }
 
-  // ====== تشغيل أولي ======
   loadAds();
 </script>
 
