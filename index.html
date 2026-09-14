@@ -83,6 +83,8 @@
     font-size: 1.8rem;
   }
   .hero p { color: var(--crimson); letter-spacing: 2px; margin-top: 4px; }
+
+  /* ===== الشريط الكحلي القديم (احتياطي) ===== */
   .marquee-bar {
     background: var(--navy);
     border: 1px solid var(--gold);
@@ -111,10 +113,10 @@
     background: linear-gradient(to right, var(--navy), transparent);
   }
   .marquee-track {
-    display: inline-block;
+    display: inline-flex;
     white-space: nowrap;
-    animation: marquee 18s linear infinite;
-    padding-right: 100%;
+    animation: marquee 25s linear infinite;
+    will-change: transform;
   }
   .marquee-track span {
     color: var(--gold);
@@ -130,9 +132,65 @@
     font-size: 0.7rem;
   }
   @keyframes marquee {
-    0%   { transform: translateX(-100%); }
-    100% { transform: translateX(100%); }
+    0%   { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
   }
+
+  /* ===== شريط الإعلان المميز (ticker) ===== */
+  .ticker-bar {
+    margin-top: 16px;
+    background: #FDFBF6;
+    border: 1px solid var(--gold);
+    border-radius: 30px;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    text-decoration: none;
+    transition: all 0.3s;
+    position: relative;
+    overflow: hidden;
+  }
+  .ticker-bar:hover {
+    background: #fff;
+    border-color: var(--navy);
+    transform: translateY(-1px);
+    box-shadow: 0 3px 10px rgba(27,58,92,0.08);
+  }
+  .ticker-text {
+    color: var(--navy);
+    font-weight: 700;
+    font-size: 0.95rem;
+    letter-spacing: 1px;
+    flex: 1;
+    text-align: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    position: relative;
+    z-index: 2;
+  }
+  .ticker-tg {
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--gold);
+    border-radius: 50%;
+    color: var(--navy);
+    font-size: 0.9rem;
+    transition: all 0.3s;
+  }
+  .ticker-bar:hover .ticker-tg {
+    background: var(--navy);
+    color: var(--gold);
+    transform: rotate(-15deg);
+  }
+
+  /* ===== البطاقات ===== */
   .card {
     background: #fff;
     border: 1px solid var(--border);
@@ -212,57 +270,62 @@
   }
   button:hover { background: var(--gold); color: var(--navy); }
   button:disabled { background: #ccc; cursor: not-allowed; }
+
+  /* ===== الإعلانات العادية (مخفّضة الكثافة) ===== */
   .ad {
     background: #FDFBF6;
-    border: 1px solid var(--border);
+    border: 1px solid rgba(212, 169, 60, 0.18);
     border-radius: 3px;
-    padding: 14px;
-    margin-bottom: 10px;
+    padding: 12px 14px;
+    margin-bottom: 8px;
+    opacity: 0.96;
   }
   .ad-entity {
-    color: var(--navy);
-    font-weight: 700;
-    margin-bottom: 6px;
+    color: #2A4A6C;
+    font-weight: 600;
+    margin-bottom: 4px;
+    font-size: 0.95rem;
   }
   .ad-desc {
-    color: #555;
-    font-size: 0.9rem;
-    margin-bottom: 8px;
+    color: #666;
+    font-size: 0.85rem;
+    margin-bottom: 6px;
     white-space: pre-wrap;
     word-wrap: break-word;
+    line-height: 1.7;
   }
   .ad-tg {
-    color: var(--gold);
-    font-size: 0.85rem;
+    color: #B8942C;
+    font-size: 0.8rem;
     font-family: monospace;
     word-break: break-all;
     text-decoration: none;
   }
   .ad-tg:hover { text-decoration: underline; }
   .ad-date {
-    color: #aaa;
-    font-size: 0.72rem;
-    margin-top: 6px;
+    color: #bbb;
+    font-size: 0.7rem;
+    margin-top: 4px;
   }
   .ad-mine {
     display: inline-block;
     background: var(--gold);
     color: var(--navy);
-    font-size: 0.65rem;
+    font-size: 0.62rem;
     padding: 2px 8px;
     border-radius: 10px;
     margin-right: 6px;
     font-weight: 700;
   }
   .ad-actions {
-    margin-top: 10px;
-    padding-top: 10px;
+    margin-top: 8px;
+    padding-top: 8px;
     border-top: 1px dashed var(--border);
   }
   .btn-delete {
     width: auto;
-    padding: 5px 14px;
-    font-size: 0.78rem;
+    padding: 4px 12px;
+    font-size: 0.72rem;
     background: var(--crimson);
     border-color: var(--crimson);
     color: #fff;
@@ -299,7 +362,7 @@
   }
   .notice strong { display: block; margin-bottom: 4px; }
 
-  /* ===== الإعلانات المثبّتة ===== */
+  /* ===== الإعلانات المميزة ===== */
   .featured {
     background: linear-gradient(135deg, #FDFBF6 0%, #FBF6EC 100%);
     border: 1px solid var(--gold);
@@ -358,8 +421,19 @@
     <img src="mha-logo.png" alt="MHA Explorer">
     <h1>MHA Explorer</h1>
     <p>حيث العلم يُنشر</p>
-    <div class="marquee-bar">
+
+    <!-- ===== شريط الإعلان المميز (ticker) ===== -->
+    <a id="tickerBar" class="ticker-bar" style="display:none;" href="#" target="_blank" rel="noopener">
+      <span class="ticker-text" id="tickerText"></span>
+      <span class="ticker-tg">✈</span>
+    </a>
+
+    <!-- ===== الشريط الكحلي الاحتياطي ===== -->
+    <div class="marquee-bar" id="fallbackMarquee">
       <div class="marquee-track">
+        <span>MHA حيث الكل يشارك</span>
+        <span>MHA حيث الكل يشارك</span>
+        <span>MHA حيث الكل يشارك</span>
         <span>MHA حيث الكل يشارك</span>
         <span>MHA حيث الكل يشارك</span>
         <span>MHA حيث الكل يشارك</span>
@@ -534,7 +608,6 @@
           description: desc,
           telegram: tg,
           createdAt: now,
-          deleteKey: key,
           authorId: MY_AUTHOR_ID
         })
       });
@@ -544,6 +617,12 @@
       const data = await res.json();
       addMyKey(data.name, key);
       localStorage.setItem("MHA_LAST", String(now));
+
+      await fetch(`${FIREBASE_URL}/keys/${data.name}.json`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(key)
+      });
 
       $entity.value = "";
       $desc.value = "";
@@ -591,7 +670,6 @@
       return;
     }
 
-    const myKeys = getMyKeys();
     const nextBatch = allAds.slice(shownCount, shownCount + PAGE_SIZE);
 
     if (shownCount === 0) $list.innerHTML = "";
@@ -599,10 +677,7 @@
     const html = nextBatch.map(ad => {
       const d = new Date(ad.createdAt);
       const date = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
-
-      const byAuthor = ad.authorId && ad.authorId === MY_AUTHOR_ID;
-      const byKey    = myKeys[ad.id] === ad.deleteKey;
-      const isMine   = byAuthor || byKey;
+      const isMine = ad.authorId && ad.authorId === MY_AUTHOR_ID;
 
       return `
         <div class="ad">
@@ -647,23 +722,20 @@
     const myKeys = getMyKeys();
     const myKey = myKeys[id];
 
+    if (!myKey) {
+      alert("لا تملك صلاحية حذف هذا الإعلان.");
+      return;
+    }
+
     try {
-      const res = await fetch(`${FIREBASE_URL}/ads/${id}.json`);
-      const ad = await res.json();
-
-      const byAuthor = ad && ad.authorId && ad.authorId === MY_AUTHOR_ID;
-      const byKey    = ad && myKey && ad.deleteKey === myKey;
-
-      if (!ad || (!byAuthor && !byKey)) {
-        alert("لا تملك صلاحية حذف هذا الإعلان.");
-        return;
-      }
-
       const del = await fetch(`${FIREBASE_URL}/ads/${id}.json`, {
         method: "DELETE"
       });
-
       if (!del.ok) throw new Error("fail");
+
+      await fetch(`${FIREBASE_URL}/keys/${id}.json`, {
+        method: "DELETE"
+      }).catch(() => {});
 
       removeMyKey(id);
       await fetchAds();
@@ -698,15 +770,35 @@
 
       document.getElementById("featuredList").innerHTML = html;
       document.getElementById("featuredWrap").style.display = "block";
-    } catch (e) {
-      // صمت تام — إن فشل التحميل لا يظهر القسم
-    }
+    } catch (e) {}
+  }
+
+  // ====== شريط الإعلان المميز (ticker.json) ======
+  async function loadTicker() {
+    try {
+      const res = await fetch('/ticker.json?v=' + Date.now());
+      if (!res.ok) return;
+      const data = await res.json();
+
+      if (!data || !data.enabled || !data.text) return;
+
+      const $bar = document.getElementById("tickerBar");
+      const $text = document.getElementById("tickerText");
+      const $fallback = document.getElementById("fallbackMarquee");
+
+      $text.textContent = data.text;
+      $bar.href = data.telegram || "#";
+
+      $bar.style.display = "flex";
+      $fallback.style.display = "none";
+    } catch (e) {}
   }
 
   fetchAds();
   loadFeatured();
+  loadTicker();
 
-  // ====== تسجيل Service Worker ======
+  // ====== Service Worker ======
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('/service-worker.js').catch(() => {});
@@ -715,4 +807,4 @@
 </script>
 
 </body>
-</html>
+  </html>
