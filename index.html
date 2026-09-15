@@ -55,14 +55,35 @@
     --border: rgba(212, 169, 60, 0.35);
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
+
   body {
     font-family: 'Noto Naskh Arabic', 'Noto Serif', serif;
     background: var(--paper);
     color: #1A1A1A;
     line-height: 1.8;
+
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 20px;
+    max-width: 1280px;
+    margin: 0 auto;
     padding: 20px;
   }
-  .wrap { max-width: 640px; margin: 0 auto; }
+
+  .sidebar { display: none; }
+
+  @media (min-width: 1080px) {
+    body {
+      grid-template-columns: minmax(180px, 1fr) 640px minmax(180px, 1fr);
+      gap: 24px;
+      justify-content: center;
+    }
+    .sidebar { display: block; }
+    #featuredWrap { display: none !important; }
+  }
+
+  .wrap { max-width: 640px; margin: 0 auto; width: 100%; min-width: 0; }
+
   .hero {
     text-align: center;
     padding: 30px 0 20px;
@@ -78,6 +99,7 @@
   }
   .hero p { color: var(--crimson); letter-spacing: 2px; margin-top: 4px; }
 
+  /* ===== الشريط الكحلي الاحتياطي ===== */
   .marquee-bar {
     background: var(--navy);
     border: 1px solid var(--gold);
@@ -129,6 +151,7 @@
     100% { transform: translateX(-50%); }
   }
 
+  /* ===== شريط الإعلان المميز ===== */
   .ticker-bar {
     margin-top: 16px;
     background: #FDFBF6;
@@ -182,6 +205,7 @@
     transform: rotate(-15deg);
   }
 
+  /* ===== البطاقات ===== */
   .card {
     background: #fff;
     border: 1px solid var(--border);
@@ -262,6 +286,7 @@
   button:hover { background: var(--gold); color: var(--navy); }
   button:disabled { background: #ccc; cursor: not-allowed; }
 
+  /* ===== الإعلانات العادية ===== */
   .ad {
     background: #FDFBF6;
     border: 1px solid rgba(212, 169, 60, 0.18);
@@ -381,6 +406,7 @@
   }
   .notice strong { display: block; margin-bottom: 4px; }
 
+  /* ===== الإعلانات المميزة ===== */
   .featured {
     background: linear-gradient(135deg, #FDFBF6 0%, #FBF6EC 100%);
     border: 1px solid var(--gold);
@@ -429,10 +455,30 @@
     background: var(--navy);
     color: var(--gold);
   }
+
+  /* ===== الإعلانات المميزة في الجانبين ===== */
+  .sidebar .featured {
+    padding: 14px;
+  }
+  .sidebar .featured-entity {
+    font-size: 0.95rem;
+  }
+  .sidebar .featured-desc {
+    font-size: 0.82rem;
+    line-height: 1.7;
+  }
+  .sidebar .featured-tg {
+    font-size: 0.75rem;
+    padding: 5px 12px;
+  }
 </style>
 </head>
 <body>
 
+<!-- ===== الإعلانات المميزة - يمين ===== -->
+<aside id="sidebarRight" class="sidebar"></aside>
+
+<!-- ===== المحتوى الرئيسي ===== -->
 <div class="wrap">
 
   <header class="hero">
@@ -458,7 +504,7 @@
   </header>
 
   <div id="featuredWrap" style="display:none;">
-    <div class="card" id="featuredCard">
+    <div class="card">
       <h2>إعلانات مميزة</h2>
       <div id="featuredList"></div>
     </div>
@@ -504,6 +550,9 @@
   </div>
 
 </div>
+
+<!-- ===== الإعلانات المميزة - يسار ===== -->
+<aside id="sidebarLeft" class="sidebar"></aside>
 
 <script>
   const FIREBASE_URL = "https://mhaexplorer-ac7a7-default-rtdb.europe-west1.firebasedatabase.app";
@@ -822,6 +871,21 @@
     }
   }
 
+  // ====== الإعلانات المميزة ======
+  function renderFeaturedCard(item) {
+    const badge = item.badge
+      ? `<div class="featured-badge">${esc(item.badge)}</div>`
+      : '';
+    return `
+      <div class="featured">
+        ${badge}
+        <div class="featured-entity">◆ ${esc(item.entity || '')}</div>
+        <div class="featured-desc">${esc(item.description || '')}</div>
+        ${item.telegram ? `<a class="featured-tg" href="${esc(item.telegram)}" target="_blank" rel="noopener">فتح الرابط →</a>` : ''}
+      </div>
+    `;
+  }
+
   async function loadFeatured() {
     try {
       const res = await fetch('/featured.json?v=' + Date.now());
@@ -830,21 +894,17 @@
 
       if (!Array.isArray(list) || list.length === 0) return;
 
-      const html = list.map(item => {
-        const badge = item.badge
-          ? `<div class="featured-badge">${esc(item.badge)}</div>`
-          : '';
-        return `
-          <div class="featured">
-            ${badge}
-            <div class="featured-entity">◆ ${esc(item.entity || '')}</div>
-            <div class="featured-desc">${esc(item.description || '')}</div>
-            ${item.telegram ? `<a class="featured-tg" href="${esc(item.telegram)}" target="_blank" rel="noopener">فتح الرابط →</a>` : ''}
-          </div>
-        `;
-      }).join("");
+      const half = Math.ceil(list.length / 2);
+      const leftItems = list.slice(0, half);
+      const rightItems = list.slice(half);
 
-      document.getElementById("featuredList").innerHTML = html;
+      document.getElementById("sidebarLeft").innerHTML =
+        leftItems.map(renderFeaturedCard).join("");
+      document.getElementById("sidebarRight").innerHTML =
+        rightItems.map(renderFeaturedCard).join("");
+
+      document.getElementById("featuredList").innerHTML =
+        list.map(renderFeaturedCard).join("");
       document.getElementById("featuredWrap").style.display = "block";
     } catch (e) {}
   }
