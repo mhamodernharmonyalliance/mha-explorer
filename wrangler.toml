@@ -6,3 +6,8 @@ compatibility_date = "2026-09-11"
 directory = "."
 binding = "ASSETS"
 run_worker_first = true
+
+[vars]
+FB_API_KEY = "AIzaSyBJTd25x7MKfcQVzAH7ZNNaAwUjXs_-CoI"
+FB_EMAIL = "api@mha-explorer.local"
+FB_PASSWORD = "MHA-Api-2026-Xyz9QpK7"
