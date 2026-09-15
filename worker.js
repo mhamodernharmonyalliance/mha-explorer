@@ -21,73 +21,21 @@ async function getToken(env) {
     })
   });
 
-  const text = await res.text();
-  if (!res.ok) throw new Error("signin_failed | " + text);
-
-  let data;
-  try { data = JSON.parse(text); } catch (e) { throw new Error("signin_parse | " + text); }
-
+  if (!res.ok) throw new Error("signin_failed");
+  const data = await res.json();
   tokenCache.token = data.idToken;
   tokenCache.expiry = now + (parseInt(data.expiresIn, 10) - 60) * 1000;
   return data.idToken;
 }
 
 function jsonResponse(data, status = 200) {
-  return new Response(JSON.stringify(data, null, 2), {
+  return new Response(JSON.stringify(data), {
     status,
     headers: {
       "Content-Type": "application/json; charset=utf-8",
       "Access-Control-Allow-Origin": "*"
     }
   });
-}
-
-async function handleDebug(env) {
-  const result = { step: "start" };
-
-  if (!env.FB_API_KEY) return jsonResponse({ error: "FB_API_KEY missing" }, 500);
-  if (!env.FB_EMAIL) return jsonResponse({ error: "FB_EMAIL missing" }, 500);
-  if (!env.FB_PASSWORD) return jsonResponse({ error: "FB_PASSWORD missing" }, 500);
-
-  result.step = "vars_ok";
-  result.email = env.FB_EMAIL;
-  result.apiKeyPrefix = env.FB_API_KEY.substring(0, 10) + "...";
-
-  try {
-    tokenCache = { token: null, expiry: 0 };
-    const token = await getToken(env);
-    result.step = "signin_ok";
-    result.tokenPrefix = token.substring(0, 20) + "...";
-
-    const testRes = await fetch(`${FIREBASE_DB}/ads.json?auth=${token}&limitToLast=1`);
-    const testText = await testRes.text();
-    result.step = "read_test";
-    result.readStatus = testRes.status;
-    result.readBody = testText.substring(0, 300);
-
-    const writeRes = await fetch(`${FIREBASE_DB}/_debug_test.json?auth=${token}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ts: Date.now() })
-    });
-    const writeText = await writeRes.text();
-    result.step = "write_test";
-    result.writeStatus = writeRes.status;
-    result.writeBody = writeText.substring(0, 300);
-
-    if (writeRes.ok) {
-      await fetch(`${FIREBASE_DB}/_debug_test.json?auth=${token}`, { method: "DELETE" });
-      result.step = "all_ok";
-    } else {
-      result.step = "write_failed";
-    }
-
-    return jsonResponse(result);
-  } catch (e) {
-    result.step = "caught";
-    result.error = String(e && e.message ? e.message : e);
-    return jsonResponse(result, 500);
-  }
 }
 
 async function handlePublish(request, env) {
@@ -108,6 +56,9 @@ async function handlePublish(request, env) {
     if (!ALLOWED_TG.test(telegram)) {
       return jsonResponse({ error: "invalid_telegram" }, 400);
     }
+    if (authorId.length > 64 || deleteKey.length > 64) {
+      return jsonResponse({ error: "invalid_meta" }, 400);
+    }
 
     const token = await getToken(env);
     const now = Date.now();
@@ -117,13 +68,8 @@ async function handlePublish(request, env) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ entity, description, telegram, authorId, createdAt: now })
     });
-    const adsText = await adsRes.text();
-    if (!adsRes.ok) return jsonResponse({ error: "ads_write_failed", detail: adsText }, 500);
-
-    let adsData;
-    try { adsData = JSON.parse(adsText); } catch (e) {
-      return jsonResponse({ error: "ads_parse_failed", detail: adsText }, 500);
-    }
+    if (!adsRes.ok) throw new Error("ads_write_failed");
+    const adsData = await adsRes.json();
     const id = adsData.name;
 
     const keysRes = await fetch(`${FIREBASE_DB}/keys/${id}.json?auth=${token}`, {
@@ -131,15 +77,14 @@ async function handlePublish(request, env) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(deleteKey)
     });
-    const keysText = await keysRes.text();
     if (!keysRes.ok) {
       await fetch(`${FIREBASE_DB}/ads/${id}.json?auth=${token}`, { method: "DELETE" });
-      return jsonResponse({ error: "keys_write_failed", detail: keysText }, 500);
+      throw new Error("keys_write_failed");
     }
 
     return jsonResponse({ ok: true, id });
   } catch (e) {
-    return jsonResponse({ error: "server_error", detail: String(e && e.message ? e.message : e) }, 500);
+    return jsonResponse({ error: "server_error" }, 500);
   }
 }
 
@@ -183,7 +128,7 @@ async function handleDelete(request, env) {
 
     return jsonResponse({ ok: true });
   } catch (e) {
-    return jsonResponse({ error: "server_error", detail: String(e && e.message ? e.message : e) }, 500);
+    return jsonResponse({ error: "server_error" }, 500);
   }
 }
 
@@ -200,10 +145,6 @@ export default {
           "Access-Control-Allow-Headers": "Content-Type"
         }
       });
-    }
-
-    if (url.pathname === "/api/debug") {
-      return handleDebug(env);
     }
 
     if (url.pathname === "/api/publish") {
