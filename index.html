@@ -720,14 +720,21 @@
     if (!confirm("هل أنت متأكد من حذف هذا الإعلان؟")) return;
 
     const myKeys = getMyKeys();
-    const myKey = myKeys[id];
-
-    if (!myKey) {
-      alert("لا تملك صلاحية حذف هذا الإعلان.");
-      return;
-    }
+    const myKey = myKeys[id];  // قد يكون undefined، هذا مقبول
 
     try {
+      // ← جديد: نقرأ الإعلان للتحقق من authorId أيضاً
+      const adRes = await fetch(`${FIREBASE_URL}/ads/${id}.json`);
+      const ad = await adRes.json();
+
+      const byAuthor = ad && ad.authorId && ad.authorId === MY_AUTHOR_ID;
+      const byKey    = myKey && ad && ad.deleteKey === myKey;
+
+      if (!ad || (!byAuthor && !byKey)) {
+        alert("لا تملك صلاحية حذف هذا الإعلان.");
+        return;
+      }
+
       const del = await fetch(`${FIREBASE_URL}/ads/${id}.json`, {
         method: "DELETE"
       });
@@ -807,4 +814,4 @@
 </script>
 
 </body>
-  </html>
+</html>
