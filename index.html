@@ -307,6 +307,17 @@
     margin-right: 6px;
     font-weight: 700;
   }
+  .ad-points {
+    display: inline-block;
+    background: var(--navy);
+    color: var(--gold);
+    font-size: 0.68rem;
+    padding: 2px 8px;
+    border-radius: 10px;
+    margin-right: 6px;
+    font-weight: 700;
+    letter-spacing: 1px;
+  }
   .ad-actions {
     margin-top: 8px;
     padding-top: 8px;
@@ -322,6 +333,24 @@
     letter-spacing: 1px;
   }
   .btn-delete:hover { background: #8B1A1A; color: #fff; }
+  .btn-boost {
+    width: auto;
+    padding: 4px 14px;
+    font-size: 0.72rem;
+    background: var(--gold);
+    border-color: var(--gold);
+    color: var(--navy);
+    letter-spacing: 1px;
+    margin-left: 6px;
+    font-weight: 700;
+  }
+  .btn-boost:hover { background: var(--navy); color: var(--gold); }
+  .btn-boost:disabled {
+    background: #e8e8e8;
+    border-color: #e8e8e8;
+    color: #999;
+    cursor: not-allowed;
+  }
   .btn-load-more {
     background: transparent;
     color: var(--navy);
@@ -482,6 +511,7 @@
   const AUTHOR_STORE = "MHA_AUTHOR_ID";
   const RATE_MS = 5 * 60 * 1000;
   const PAGE_SIZE = 10;
+  const DAY_MS = 24 * 60 * 60 * 1000;
 
   const MAX_ENTITY = 80;
   const MAX_DESC = 1500;
@@ -516,6 +546,14 @@
     const words = wordCount($input.value);
     $meta.textContent = `${words} كلمة · ${len}/${max}`;
     $meta.classList.toggle("warn", len > max * 0.9);
+  }
+
+  function formatWait(ms) {
+    if (ms <= 0) return "";
+    const h = Math.floor(ms / 3600000);
+    const m = Math.floor((ms % 3600000) / 60000);
+    if (h > 0) return h + "س " + m + "د";
+    return m + "د";
   }
 
   $entity.addEventListener("input", () => updateMeta($entity, $entityMeta, MAX_ENTITY));
@@ -600,7 +638,7 @@
       const data = await res.json();
 
       if (!res.ok || !data.ok) {
-        throw new Error((data.error || "fail") + (data.detail ? " | " + data.detail : ""));
+        throw new Error(data.error || "fail");
       }
 
       addMyKey(data.id, key);
@@ -615,7 +653,7 @@
       await fetchAds();
       alert("تم النشر!");
     } catch (err) {
-      alert("تعذر النشر: " + (err && err.message ? err.message : "unknown"));
+      alert("تعذر النشر.");
     } finally {
       $btn.disabled = false;
       $btn.textContent = "نشر الإعلان";
@@ -632,7 +670,7 @@
       } else {
         allAds = Object.keys(data)
           .map(id => ({ id, ...data[id] }))
-          .sort((a, b) => b.createdAt - a.createdAt);
+          .sort((a, b) => (b.points || 0) - (a.points || 0) || b.createdAt - a.createdAt);
       }
 
       shownCount = 0;
@@ -660,11 +698,18 @@
       const d = new Date(ad.createdAt);
       const date = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
       const isMine = ad.authorId && ad.authorId === MY_AUTHOR_ID;
+      const points = ad.points || 0;
+      const lastBoostAt = ad.lastBoostAt || 0;
+      const nextBoostAt = lastBoostAt + DAY_MS;
+      const now = Date.now();
+      const canBoost = now >= nextBoostAt;
+      const waitMs = nextBoostAt - now;
 
       return `
         <div class="ad">
           <div class="ad-entity">
             ${isMine ? '<span class="ad-mine">إعلاني</span>' : ''}
+            ${points > 0 ? `<span class="ad-points">◆ ${points}</span>` : ''}
             ◆ ${esc(ad.entity)}
           </div>
           <div class="ad-desc">${esc(ad.description)}</div>
@@ -672,6 +717,9 @@
           <div class="ad-date">${date}</div>
           ${isMine ? `
             <div class="ad-actions">
+              <button class="btn-boost" data-boost="${ad.id}" ${canBoost ? '' : 'disabled'}>
+                ${canBoost ? '◆ نقطة' : '⏳ ' + formatWait(waitMs)}
+              </button>
               <button class="btn-delete" data-del="${ad.id}">حذف الإعلان</button>
             </div>
           ` : ''}
@@ -686,6 +734,12 @@
       if (b.dataset.bound) return;
       b.dataset.bound = "1";
       b.addEventListener("click", () => deleteAd(b.dataset.del));
+    });
+
+    $list.querySelectorAll("[data-boost]").forEach(b => {
+      if (b.dataset.bound) return;
+      b.dataset.bound = "1";
+      b.addEventListener("click", () => boostAd(b.dataset.boost, b));
     });
 
     if (shownCount < allAds.length) {
@@ -722,14 +776,49 @@
           alert("لا تملك صلاحية حذف هذا الإعلان.");
           return;
         }
-        throw new Error((data.error || "fail") + (data.detail ? " | " + data.detail : ""));
+        throw new Error(data.error || "fail");
       }
 
       removeMyKey(id);
       await fetchAds();
       alert("تم الحذف.");
     } catch (err) {
-      alert("تعذر الحذف: " + (err && err.message ? err.message : "unknown"));
+      alert("تعذر الحذف.");
+    }
+  }
+
+  async function boostAd(id, btn) {
+    btn.disabled = true;
+    const original = btn.textContent;
+    btn.textContent = "...";
+
+    try {
+      const res = await fetch("/api/boost", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: id, authorId: MY_AUTHOR_ID })
+      });
+      const data = await res.json();
+
+      if (!res.ok || !data.ok) {
+        if (data.error === "wait") {
+          btn.textContent = "⏳ " + formatWait(data.waitMs);
+          return;
+        }
+        if (data.error === "not_allowed") {
+          alert("لا تملك صلاحية هذه النقطة.");
+          btn.textContent = original;
+          btn.disabled = false;
+          return;
+        }
+        throw new Error(data.error || "fail");
+      }
+
+      await fetchAds();
+    } catch (err) {
+      btn.textContent = original;
+      btn.disabled = false;
+      alert("تعذر إضافة النقطة.");
     }
   }
 
