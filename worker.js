@@ -1,20 +1,13 @@
-// MHA Explorer — Cloudflare Worker
-// API: /api/publish + /api/delete
-
+// MHA Explorer — Cloudflare Worker (Debug Mode)
 const FIREBASE_DB = "https://mhaexplorer-ac7a7-default-rtdb.europe-west1.firebasedatabase.app";
 const FIREBASE_SIGNIN = "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword";
-
-const MAX_ENTITY = 80;
-const MAX_DESC = 1500;
-const ALLOWED_TG = /^https?:\/\/(t\.me|telegram\.me)\//i;
 
 let tokenCache = { token: null, expiry: 0 };
 
 async function getToken(env) {
   const now = Date.now();
-  if (tokenCache.token && now < tokenCache.expiry) {
-    return tokenCache.token;
-  }
+  if (tokenCache.token && now < tokenCache.expiry) return tokenCache.token;
+
   const res = await fetch(`${FIREBASE_SIGNIN}?key=${env.FB_API_KEY}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -24,8 +17,16 @@ async function getToken(env) {
       returnSecureToken: true
     })
   });
-  if (!res.ok) throw new Error("signin_failed");
-  const data = await res.json();
+
+  const text = await res.text();
+
+  if (!res.ok) {
+    throw new Error("signin_failed: " + text);
+  }
+
+  let data;
+  try { data = JSON.parse(text); } catch (e) { throw new Error("signin_parse: " + text); }
+
   tokenCache.token = data.idToken;
   tokenCache.expiry = now + (parseInt(data.expiresIn, 10) - 60) * 1000;
   return data.idToken;
@@ -53,15 +54,6 @@ async function handlePublish(request, env) {
     if (!entity || !description || !telegram || !authorId || !deleteKey) {
       return jsonResponse({ error: "missing_fields" }, 400);
     }
-    if (entity.length > MAX_ENTITY || description.length > MAX_DESC) {
-      return jsonResponse({ error: "too_long" }, 400);
-    }
-    if (!ALLOWED_TG.test(telegram)) {
-      return jsonResponse({ error: "invalid_telegram" }, 400);
-    }
-    if (authorId.length > 64 || deleteKey.length > 64) {
-      return jsonResponse({ error: "invalid_meta" }, 400);
-    }
 
     const token = await getToken(env);
     const now = Date.now();
@@ -71,8 +63,14 @@ async function handlePublish(request, env) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ entity, description, telegram, authorId, createdAt: now })
     });
-    if (!adsRes.ok) throw new Error("ads_write_failed");
-    const adsData = await adsRes.json();
+
+    const adsText = await adsRes.text();
+    if (!adsRes.ok) {
+      return jsonResponse({ error: "ads_write_failed", detail: adsText }, 500);
+    }
+
+    let adsData;
+    try { adsData = JSON.parse(adsText); } catch (e) { return jsonResponse({ error: "ads_parse_failed", detail: adsText }, 500); }
     const id = adsData.name;
 
     const keysRes = await fetch(`${FIREBASE_DB}/keys/${id}.json?auth=${token}`, {
@@ -80,65 +78,21 @@ async function handlePublish(request, env) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(deleteKey)
     });
+
+    const keysText = await keysRes.text();
     if (!keysRes.ok) {
       await fetch(`${FIREBASE_DB}/ads/${id}.json?auth=${token}`, { method: "DELETE" });
-      throw new Error("keys_write_failed");
+      return jsonResponse({ error: "keys_write_failed", detail: keysText }, 500);
     }
 
     return jsonResponse({ ok: true, id });
   } catch (e) {
-    return jsonResponse({ error: "server_error" }, 500);
+    return jsonResponse({ error: "server_error", detail: String(e && e.message ? e.message : e) }, 500);
   }
 }
 
 async function handleDelete(request, env) {
-  try {
-    const body = await request.json();
-    const id = (body.id || "").toString().trim();
-    const authorId = (body.authorId || "").toString().trim();
-    const deleteKey = (body.deleteKey || "").toString().trim();
-
-    if (!id || (!authorId && !deleteKey)) {
-      return jsonResponse({ error: "missing_fields" }, 400);
-    }
-    if (!/^-[A-Za-z0-9_-]{10,40}$/.test(id)) {
-      return jsonResponse({ error: "invalid_id" }, 400);
-    }
-
-    const token = await getToken(env);
-
-    const adRes = await fetch(`${FIREBASE_DB}/ads/${id}.json?auth=${token}`);
-    if (!adRes.ok) throw new Error("ads_read_failed");
-    const ad = await adRes.json();
-    if (!ad) return jsonResponse({ error: "not_found" }, 404);
-
-    const byAuthor = authorId && ad.authorId === authorId;
-    let byKey = false;
-    if (!byAuthor && deleteKey) {
-      const keyRes = await fetch(`${FIREBASE_DB}/keys/${id}.json?auth=${token}`);
-      if (keyRes.ok) {
-        const storedKey = await keyRes.json();
-        byKey = storedKey === deleteKey;
-      }
-    }
-
-    if (!byAuthor && !byKey) {
-      return jsonResponse({ error: "not_allowed" }, 403);
-    }
-
-    const delAd = await fetch(`${FIREBASE_DB}/ads/${id}.json?auth=${token}`, {
-      method: "DELETE"
-    });
-    if (!delAd.ok) throw new Error("ads_delete_failed");
-
-    await fetch(`${FIREBASE_DB}/keys/${id}.json?auth=${token}`, {
-      method: "DELETE"
-    }).catch(() => {});
-
-    return jsonResponse({ ok: true });
-  } catch (e) {
-    return jsonResponse({ error: "server_error" }, 500);
-  }
+  return jsonResponse({ error: "not_implemented_in_debug" }, 500);
 }
 
 export default {
