@@ -1,4 +1,3 @@
-```toml
 name = "mha-explorer"
 main = "worker.js"
 compatibility_date = "2026-09-11"
@@ -6,14 +5,3 @@ compatibility_date = "2026-09-11"
 [assets]
 directory = "."
 binding = "ASSETS"
-```
-
-2) worker.js
-
-```js
-export default {
-  async fetch(request, env) {
-    return env.ASSETS.fetch(request);
-  }
-};
-```
