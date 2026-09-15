@@ -4,6 +4,7 @@ const FIREBASE_SIGNIN = "https://identitytoolkit.googleapis.com/v1/accounts:sign
 const MAX_ENTITY = 80;
 const MAX_DESC = 1500;
 const ALLOWED_TG = /^https?:\/\/(t\.me|telegram\.me)\//i;
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 let tokenCache = { token: null, expiry: 0 };
 
@@ -20,7 +21,6 @@ async function getToken(env) {
       returnSecureToken: true
     })
   });
-
   if (!res.ok) throw new Error("signin_failed");
   const data = await res.json();
   tokenCache.token = data.idToken;
@@ -132,6 +132,57 @@ async function handleDelete(request, env) {
   }
 }
 
+async function handleBoost(request, env) {
+  try {
+    const body = await request.json();
+    const id = (body.id || "").toString().trim();
+    const authorId = (body.authorId || "").toString().trim();
+
+    if (!id || !authorId) {
+      return jsonResponse({ error: "missing_fields" }, 400);
+    }
+    if (!/^-[A-Za-z0-9_-]{10,40}$/.test(id)) {
+      return jsonResponse({ error: "invalid_id" }, 400);
+    }
+
+    const token = await getToken(env);
+
+    const adRes = await fetch(`${FIREBASE_DB}/ads/${id}.json?auth=${token}`);
+    if (!adRes.ok) throw new Error("ads_read_failed");
+    const ad = await adRes.json();
+    if (!ad) return jsonResponse({ error: "not_found" }, 404);
+
+    if (ad.authorId !== authorId) {
+      return jsonResponse({ error: "not_allowed" }, 403);
+    }
+
+    const now = Date.now();
+    const lastBoostAt = ad.lastBoostAt || 0;
+    const nextBoostAt = lastBoostAt + DAY_MS;
+
+    if (now < nextBoostAt) {
+      return jsonResponse({
+        error: "wait",
+        waitMs: nextBoostAt - now,
+        nextBoostAt: nextBoostAt,
+        points: ad.points || 0
+      }, 429);
+    }
+
+    const newPoints = (ad.points || 0) + 1;
+    const updateRes = await fetch(`${FIREBASE_DB}/ads/${id}.json?auth=${token}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ points: newPoints, lastBoostAt: now })
+    });
+    if (!updateRes.ok) throw new Error("boost_failed");
+
+    return jsonResponse({ ok: true, points: newPoints, nextBoostAt: now + DAY_MS });
+  } catch (e) {
+    return jsonResponse({ error: "server_error" }, 500);
+  }
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -155,6 +206,11 @@ export default {
     if (url.pathname === "/api/delete") {
       if (request.method !== "POST") return jsonResponse({ error: "method_not_allowed" }, 405);
       return handleDelete(request, env);
+    }
+
+    if (url.pathname === "/api/boost") {
+      if (request.method !== "POST") return jsonResponse({ error: "method_not_allowed" }, 405);
+      return handleBoost(request, env);
     }
 
     return env.ASSETS.fetch(request);
