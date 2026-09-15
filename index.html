@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<!-- ===== SEO ===== -->
 <title>MHA Explorer — حيث العلم يُنشر | منصة أكاديمية</title>
 <meta name="description" content="MHA Explorer — منصة أكاديمية مستقلة لنشر وتبادل المذكرات والملخصات الدراسية.">
 <meta name="author" content="MHA Explorer">
@@ -12,7 +11,6 @@
 <meta name="google-site-verification" content="google7f4fbd39717d3a1c">
 <link rel="canonical" href="https://mha-explorer.mhaapp.workers.dev/">
 
-<!-- ===== Open Graph ===== -->
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://mha-explorer.mhaapp.workers.dev/">
 <meta property="og:title" content="MHA Explorer — حيث العلم يُنشر">
@@ -20,24 +18,20 @@
 <meta property="og:image" content="https://mha-explorer.mhaapp.workers.dev/mha-logo.png">
 <meta property="og:locale" content="ar_AR">
 
-<!-- ===== Twitter ===== -->
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="MHA Explorer — حيث العلم يُنشر">
 <meta name="twitter:description" content="منصة أكاديمية مستقلة لنشر وتبادل المذكرات والملخصات الدراسية.">
 <meta name="twitter:image" content="https://mha-explorer.mhaapp.workers.dev/mha-logo.png">
 
-<!-- ===== PWA ===== -->
 <link rel="manifest" href="/manifest.json">
 <link rel="icon" type="image/png" href="/mha-logo.png">
 <link rel="apple-touch-icon" href="/mha-logo.png">
 <meta name="theme-color" content="#1B3A5C">
 
-<!-- ===== الخطوط ===== -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Naskh+Arabic:wght@400;700&family=Noto+Serif:wght@400;700&display=swap" rel="stylesheet">
 
-<!-- ===== JSON-LD ===== -->
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -84,7 +78,6 @@
   }
   .hero p { color: var(--crimson); letter-spacing: 2px; margin-top: 4px; }
 
-  /* ===== الشريط الكحلي القديم (احتياطي) ===== */
   .marquee-bar {
     background: var(--navy);
     border: 1px solid var(--gold);
@@ -136,7 +129,6 @@
     100% { transform: translateX(-50%); }
   }
 
-  /* ===== شريط الإعلان المميز (ticker) ===== */
   .ticker-bar {
     margin-top: 16px;
     background: #FDFBF6;
@@ -190,7 +182,6 @@
     transform: rotate(-15deg);
   }
 
-  /* ===== البطاقات ===== */
   .card {
     background: #fff;
     border: 1px solid var(--border);
@@ -271,7 +262,6 @@
   button:hover { background: var(--gold); color: var(--navy); }
   button:disabled { background: #ccc; cursor: not-allowed; }
 
-  /* ===== الإعلانات العادية (مخفّضة الكثافة) ===== */
   .ad {
     background: #FDFBF6;
     border: 1px solid rgba(212, 169, 60, 0.18);
@@ -362,7 +352,6 @@
   }
   .notice strong { display: block; margin-bottom: 4px; }
 
-  /* ===== الإعلانات المميزة ===== */
   .featured {
     background: linear-gradient(135deg, #FDFBF6 0%, #FBF6EC 100%);
     border: 1px solid var(--gold);
@@ -422,13 +411,11 @@
     <h1>MHA Explorer</h1>
     <p>حيث العلم يُنشر</p>
 
-    <!-- ===== شريط الإعلان المميز (ticker) ===== -->
     <a id="tickerBar" class="ticker-bar" style="display:none;" href="#" target="_blank" rel="noopener">
       <span class="ticker-text" id="tickerText"></span>
       <span class="ticker-tg">✈</span>
     </a>
 
-    <!-- ===== الشريط الكحلي الاحتياطي ===== -->
     <div class="marquee-bar" id="fallbackMarquee">
       <div class="marquee-track">
         <span>MHA حيث الكل يشارك</span>
@@ -441,7 +428,6 @@
     </div>
   </header>
 
-  <!-- ===== إعلانات مثبّتة ===== -->
   <div id="featuredWrap" style="display:none;">
     <div class="card" id="featuredCard">
       <h2>إعلانات مميزة</h2>
@@ -491,7 +477,6 @@
 </div>
 
 <script>
-  // ====== الإعداد ======
   const FIREBASE_URL = "https://mhaexplorer-ac7a7-default-rtdb.europe-west1.firebasedatabase.app";
   const KEY_STORE = "MHA_MY_KEYS";
   const AUTHOR_STORE = "MHA_AUTHOR_ID";
@@ -564,7 +549,6 @@
   }
   const MY_AUTHOR_ID = getMyAuthorId();
 
-  // ====== النشر عبر /api/publish ======
   $btn.addEventListener("click", async () => {
     const entity = $entity.value.trim();
     const desc   = $desc.value.trim();
@@ -616,7 +600,7 @@
       const data = await res.json();
 
       if (!res.ok || !data.ok) {
-        throw new Error(data.error || "fail");
+        throw new Error((data.error || "fail") + (data.detail ? " | " + data.detail : ""));
       }
 
       addMyKey(data.id, key);
@@ -631,7 +615,7 @@
       await fetchAds();
       alert("تم النشر!");
     } catch (err) {
-      alert("تعذر النشر.");
+      alert("تعذر النشر: " + (err && err.message ? err.message : "unknown"));
     } finally {
       $btn.disabled = false;
       $btn.textContent = "نشر الإعلان";
@@ -714,7 +698,6 @@
 
   $loadMore.addEventListener("click", renderNextPage);
 
-  // ====== الحذف عبر /api/delete ======
   async function deleteAd(id) {
     if (!confirm("هل أنت متأكد من حذف هذا الإعلان؟")) return;
 
@@ -739,18 +722,17 @@
           alert("لا تملك صلاحية حذف هذا الإعلان.");
           return;
         }
-        throw new Error(data.error || "fail");
+        throw new Error((data.error || "fail") + (data.detail ? " | " + data.detail : ""));
       }
 
       removeMyKey(id);
       await fetchAds();
       alert("تم الحذف.");
     } catch (err) {
-      alert("تعذر الحذف.");
+      alert("تعذر الحذف: " + (err && err.message ? err.message : "unknown"));
     }
   }
 
-  // ====== الإعلانات المثبّتة (featured.json) ======
   async function loadFeatured() {
     try {
       const res = await fetch('/featured.json?v=' + Date.now());
@@ -778,7 +760,6 @@
     } catch (e) {}
   }
 
-  // ====== شريط الإعلان المميز (ticker.json) ======
   async function loadTicker() {
     try {
       const res = await fetch('/ticker.json?v=' + Date.now());
@@ -803,7 +784,6 @@
   loadFeatured();
   loadTicker();
 
-  // ====== Service Worker ======
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('/service-worker.js').catch(() => {});
@@ -812,4 +792,4 @@
 </script>
 
 </body>
-  </html>
+</html>
