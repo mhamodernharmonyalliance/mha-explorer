@@ -1,0 +1,26 @@
+[
+  {
+    "entity": "DeepSeek",
+    "description": "نموذج ذكاء اصطناعي مفتوح المصدر للمحادثة والبرمجة والتحليل. مجاني وسريع ويدعم العربية.",
+    "telegram": "https://t.me/deepseek",
+    "badge": "إعلان رسمي"
+  },
+  {
+    "entity": "منصة MHA",
+    "description": "حيث العلم يُنشر. انضم إلى مجتمع المعرفة.",
+    "telegram": "https://t.me/MHAExplorer",
+    "badge": "إعلان"
+  },
+  {
+    "entity": "قناة المذكرات",
+    "description": "ملخصات جاهزة ومذكرات منظمة لكل المراحل الدراسية.",
+    "telegram": "https://t.me/durov",
+    "badge": "إعلان"
+  },
+  {
+    "entity": "مكتبة الطالب",
+    "description": "كل ما يحتاجه الطالب في مكان واحد — مجاناً.",
+    "telegram": "https://t.me/telegram",
+    "badge": "إعلان"
+  }
+]
