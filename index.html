@@ -15,17 +15,17 @@
 <meta property="og:url" content="https://mha-explorer.mhaapp.workers.dev/">
 <meta property="og:title" content="MHA Explorer — حيث العلم يُنشر">
 <meta property="og:description" content="منصة أكاديمية مستقلة لنشر وتبادل المذكرات والملخصات الدراسية.">
-<meta property="og:image" content="https://mha-explorer.mhaapp.workers.dev/mha-logo.png">
+<meta property="og:image" content="https://mha-explorer.mhaapp.workers.dev/mha-logo.svg">
 <meta property="og:locale" content="ar_AR">
 
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="MHA Explorer — حيث العلم يُنشر">
 <meta name="twitter:description" content="منصة أكاديمية مستقلة لنشر وتبادل المذكرات والملخصات الدراسية.">
-<meta name="twitter:image" content="https://mha-explorer.mhaapp.workers.dev/mha-logo.png">
+<meta name="twitter:image" content="https://mha-explorer.mhaapp.workers.dev/mha-logo.svg">
 
 <link rel="manifest" href="/manifest.json">
-<link rel="icon" type="image/png" href="/mha-logo.png">
-<link rel="apple-touch-icon" href="/mha-logo.png">
+<link rel="icon" type="image/svg+xml" href="/mha-logo.svg">
+<link rel="apple-touch-icon" href="/mha-logo.svg">
 <meta name="theme-color" content="#1B3A5C">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -39,7 +39,7 @@
   "name": "MHA Explorer",
   "alternateName": "MHA",
   "url": "https://mha-explorer.mhaapp.workers.dev/",
-  "logo": "https://mha-explorer.mhaapp.workers.dev/mha-logo.png",
+  "logo": "https://mha-explorer.mhaapp.workers.dev/mha-logo.svg",
   "description": "منصة أكاديمية مستقلة لنشر وتبادل المذكرات والملخصات الدراسية.",
   "slogan": "حيث العلم يُنشر",
   "inLanguage": "ar"
@@ -99,7 +99,6 @@
   }
   .hero p { color: var(--crimson); letter-spacing: 2px; margin-top: 4px; }
 
-  /* ===== الشريط الكحلي الاحتياطي ===== */
   .marquee-bar {
     background: var(--navy);
     border: 1px solid var(--gold);
@@ -151,7 +150,6 @@
     100% { transform: translateX(-50%); }
   }
 
-  /* ===== شريط الإعلان المميز ===== */
   .ticker-bar {
     margin-top: 16px;
     background: #FDFBF6;
@@ -205,7 +203,6 @@
     transform: rotate(-15deg);
   }
 
-  /* ===== البطاقات ===== */
   .card {
     background: #fff;
     border: 1px solid var(--border);
@@ -286,7 +283,6 @@
   button:hover { background: var(--gold); color: var(--navy); }
   button:disabled { background: #ccc; cursor: not-allowed; }
 
-  /* ===== الإعلانات العادية ===== */
   .ad {
     background: #FDFBF6;
     border: 1px solid rgba(212, 169, 60, 0.18);
@@ -406,7 +402,6 @@
   }
   .notice strong { display: block; margin-bottom: 4px; }
 
-  /* ===== الإعلانات المميزة ===== */
   .featured {
     background: linear-gradient(135deg, #FDFBF6 0%, #FBF6EC 100%);
     border: 1px solid var(--gold);
@@ -456,7 +451,6 @@
     color: var(--gold);
   }
 
-  /* ===== الإعلانات المميزة في الجانبين ===== */
   .sidebar .featured {
     padding: 14px;
   }
@@ -475,14 +469,12 @@
 </head>
 <body>
 
-<!-- ===== الإعلانات المميزة - يمين ===== -->
 <aside id="sidebarRight" class="sidebar"></aside>
 
-<!-- ===== المحتوى الرئيسي ===== -->
 <div class="wrap">
 
   <header class="hero">
-    <img src="mha-logo.png" alt="MHA Explorer">
+    <img src="/mha-logo.svg" alt="MHA Explorer">
     <h1>MHA Explorer</h1>
     <p>حيث العلم يُنشر</p>
 
@@ -530,7 +522,7 @@
       <div class="field-head">
         <label for="tg">رابط التواصل (تليجرام)</label>
       </div>
-      <input id="tg" placeholder="https://t.me/username">
+      <input id="tg" placeholder="t.me/username أو @username أو username">
     </div>
     <button id="publish">نشر الإعلان</button>
   </div>
@@ -551,7 +543,6 @@
 
 </div>
 
-<!-- ===== الإعلانات المميزة - يسار ===== -->
 <aside id="sidebarLeft" class="sidebar"></aside>
 
 <script>
@@ -605,6 +596,16 @@
     return m + "د";
   }
 
+  // ===== توحيد رابط تليجرام =====
+  function normalizeTelegram(input) {
+    let s = (input || "").toString().trim();
+    s = s.replace(/^@/, "");
+    s = s.replace(/^(https?:\/\/)?(www\.)?(t\.me|telegram\.me)\//i, "");
+    s = s.replace(/\/+$/, "");
+    if (!/^[a-zA-Z0-9_]{3,32}$/.test(s)) return null;
+    return "https://t.me/" + s;
+  }
+
   $entity.addEventListener("input", () => updateMeta($entity, $entityMeta, MAX_ENTITY));
   $desc.addEventListener("input", () => updateMeta($desc, $descMeta, MAX_DESC));
 
@@ -639,9 +640,9 @@
   $btn.addEventListener("click", async () => {
     const entity = $entity.value.trim();
     const desc   = $desc.value.trim();
-    const tg     = $tg.value.trim();
+    const tgRaw  = $tg.value.trim();
 
-    if (!entity || !desc || !tg) {
+    if (!entity || !desc || !tgRaw) {
       alert("املأ الحقول الثلاثة.");
       return;
     }
@@ -653,8 +654,10 @@
       alert(`الوصف يجب ألا يتجاوز ${MAX_DESC} حرفاً.`);
       return;
     }
-    if (!/^https?:\/\/(t\.me|telegram\.me)\//i.test(tg)) {
-      alert("الرابط يجب أن يبدأ بـ https://t.me/");
+
+    const tgFinal = normalizeTelegram(tgRaw);
+    if (!tgFinal) {
+      alert("رابط تليجرام غير صحيح.\nأمثلة: t.me/durov · @durov · durov");
       return;
     }
 
@@ -678,7 +681,7 @@
         body: JSON.stringify({
           entity: entity,
           description: desc,
-          telegram: tg,
+          telegram: tgFinal,
           authorId: MY_AUTHOR_ID,
           deleteKey: key
         })
@@ -871,7 +874,6 @@
     }
   }
 
-  // ====== الإعلانات المميزة ======
   function renderFeaturedCard(item) {
     const badge = item.badge
       ? `<div class="featured-badge">${esc(item.badge)}</div>`
