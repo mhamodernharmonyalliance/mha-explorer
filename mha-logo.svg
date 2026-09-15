@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2A5580"/>
+      <stop offset="50%" stop-color="#1B3A5C"/>
+      <stop offset="100%" stop-color="#0F2438"/>
+    </linearGradient>
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F4D47A"/>
+      <stop offset="50%" stop-color="#D4A93C"/>
+      <stop offset="100%" stop-color="#B8912E"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#D4A93C" stop-opacity="0.3"/>
+      <stop offset="100%" stop-color="#D4A93C" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
+      <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="#000" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+
+  <!-- الخلفية - مربع بزوايا دائرية -->
+  <rect width="512" height="512" rx="110" ry="110" fill="url(#bgGrad)"/>
+
+  <!-- توهج خلفي -->
+  <circle cx="256" cy="256" r="200" fill="url(#glow)"/>
+
+  <!-- دائرة خارجية ذهبية رقيقة -->
+  <circle cx="256" cy="256" r="180" fill="none" stroke="url(#goldGrad)" stroke-width="2" opacity="0.5"/>
+  <circle cx="256" cy="256" r="160" fill="none" stroke="url(#goldGrad)" stroke-width="1" opacity="0.3"/>
+
+  <!-- الرمز الأساسي - معين ذهبي كبير -->
+  <g filter="url(#shadow)">
+    <path d="M256 130 L370 256 L256 382 L142 256 Z"
+          fill="url(#goldGrad)"
+          stroke="#F4D47A"
+          stroke-width="2"
+          stroke-linejoin="round"/>
+  </g>
+
+  <!-- معين داخلي كحلي -->
+  <path d="M256 180 L330 256 L256 332 L182 256 Z"
+        fill="#1B3A5C"
+        stroke="#0F2438"
+        stroke-width="1"
+        stroke-linejoin="round"/>
+
+  <!-- نقطة مركزية ذهبية -->
+  <circle cx="256" cy="256" r="16" fill="url(#goldGrad)"/>
+  <circle cx="256" cy="256" r="8" fill="#F4D47A"/>
+
+  <!-- نصوص MHA -->
+  <text x="256" y="440"
+        text-anchor="middle"
+        font-family="Noto Serif, serif"
+        font-size="52"
+        font-weight="700"
+        letter-spacing="8"
+        fill="url(#goldGrad)">MHA</text>
+
+  <!-- خط زخرفي أسفل النص -->
+  <line x1="180" y1="460" x2="332" y2="460" stroke="url(#goldGrad)" stroke-width="2" opacity="0.7"/>
+  <circle cx="256" cy="468" r="3" fill="url(#goldGrad)"/>
+</svg>
