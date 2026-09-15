@@ -564,6 +564,7 @@
   }
   const MY_AUTHOR_ID = getMyAuthorId();
 
+  // ====== النشر عبر /api/publish ======
   $btn.addEventListener("click", async () => {
     const entity = $entity.value.trim();
     const desc   = $desc.value.trim();
@@ -600,29 +601,26 @@
     const key = newKey();
 
     try {
-      const res = await fetch(FIREBASE_URL + "/ads.json", {
+      const res = await fetch("/api/publish", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           entity: entity,
           description: desc,
           telegram: tg,
-          createdAt: now,
-          authorId: MY_AUTHOR_ID
+          authorId: MY_AUTHOR_ID,
+          deleteKey: key
         })
       });
 
-      if (!res.ok) throw new Error("fail");
-
       const data = await res.json();
-      addMyKey(data.name, key);
-      localStorage.setItem("MHA_LAST", String(now));
 
-      await fetch(`${FIREBASE_URL}/keys/${data.name}.json`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(key)
-      });
+      if (!res.ok || !data.ok) {
+        throw new Error(data.error || "fail");
+      }
+
+      addMyKey(data.id, key);
+      localStorage.setItem("MHA_LAST", String(now));
 
       $entity.value = "";
       $desc.value = "";
@@ -716,33 +714,33 @@
 
   $loadMore.addEventListener("click", renderNextPage);
 
+  // ====== الحذف عبر /api/delete ======
   async function deleteAd(id) {
     if (!confirm("هل أنت متأكد من حذف هذا الإعلان؟")) return;
 
     const myKeys = getMyKeys();
-    const myKey = myKeys[id];  // قد يكون undefined، هذا مقبول
+    const myKey = myKeys[id] || "";
 
     try {
-      // ← جديد: نقرأ الإعلان للتحقق من authorId أيضاً
-      const adRes = await fetch(`${FIREBASE_URL}/ads/${id}.json`);
-      const ad = await adRes.json();
-
-      const byAuthor = ad && ad.authorId && ad.authorId === MY_AUTHOR_ID;
-      const byKey    = myKey && ad && ad.deleteKey === myKey;
-
-      if (!ad || (!byAuthor && !byKey)) {
-        alert("لا تملك صلاحية حذف هذا الإعلان.");
-        return;
-      }
-
-      const del = await fetch(`${FIREBASE_URL}/ads/${id}.json`, {
-        method: "DELETE"
+      const res = await fetch("/api/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: id,
+          authorId: MY_AUTHOR_ID,
+          deleteKey: myKey
+        })
       });
-      if (!del.ok) throw new Error("fail");
 
-      await fetch(`${FIREBASE_URL}/keys/${id}.json`, {
-        method: "DELETE"
-      }).catch(() => {});
+      const data = await res.json();
+
+      if (!res.ok || !data.ok) {
+        if (data.error === "not_allowed") {
+          alert("لا تملك صلاحية حذف هذا الإعلان.");
+          return;
+        }
+        throw new Error(data.error || "fail");
+      }
 
       removeMyKey(id);
       await fetchAds();
@@ -814,4 +812,4 @@
 </script>
 
 </body>
-</html>
+  </html>
