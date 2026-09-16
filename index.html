@@ -28,6 +28,16 @@
 <link rel="apple-touch-icon" href="/mha-logo.svg">
 <meta name="theme-color" content="#1B3A5C">
 
+<!-- ═══════════ تليجرام Mini App ═══════════ -->
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script>
+  if (window.Telegram && window.Telegram.WebApp) {
+    window.Telegram.WebApp.ready();
+    window.Telegram.WebApp.expand();
+  }
+</script>
+<!-- ═══════════ نهاية تليجرام ═══════════ -->
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Naskh+Arabic:wght@400;700&family=Noto+Serif:wght@400;700&display=swap" rel="stylesheet">
@@ -596,7 +606,6 @@
     return m + "د";
   }
 
-  // ===== توحيد رابط تليجرام =====
   function normalizeTelegram(input) {
     let s = (input || "").toString().trim();
     s = s.replace(/^@/, "");
