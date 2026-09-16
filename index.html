@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <title>MHA Explorer — حيث العلم يُنشر | منصة أكاديمية</title>
-<meta name="description" content="MHA Explorer — منصة أكاديمية مستقلة لنشر وتبادل المواد التعليمية: مذكرات، ملخصات، مراجع، ودورات.">
+<meta name="description" content="MHA Explorer — منصة أكاديمية مستقلة لنشر وتبادل المذكرات والملخصات الدراسية.">
 <meta name="author" content="MHA Explorer">
 <meta name="robots" content="index, follow">
 <meta name="google-site-verification" content="google7f4fbd39717d3a1c">
@@ -14,13 +14,13 @@
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://mha-explorer.mhaapp.workers.dev/">
 <meta property="og:title" content="MHA Explorer — حيث العلم يُنشر">
-<meta property="og:description" content="منصة أكاديمية مستقلة لنشر وتبادل المواد التعليمية.">
+<meta property="og:description" content="منصة أكاديمية مستقلة لنشر وتبادل المذكرات والملخصات الدراسية.">
 <meta property="og:image" content="https://mha-explorer.mhaapp.workers.dev/mha-logo.svg">
 <meta property="og:locale" content="ar_AR">
 
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="MHA Explorer — حيث العلم يُنشر">
-<meta name="twitter:description" content="منصة أكاديمية مستقلة لنشر وتبادل المواد التعليمية.">
+<meta name="twitter:description" content="منصة أكاديمية مستقلة لنشر وتبادل المذكرات والملخصات الدراسية.">
 <meta name="twitter:image" content="https://mha-explorer.mhaapp.workers.dev/mha-logo.svg">
 
 <link rel="manifest" href="/manifest.json">
@@ -40,7 +40,7 @@
   "alternateName": "MHA",
   "url": "https://mha-explorer.mhaapp.workers.dev/",
   "logo": "https://mha-explorer.mhaapp.workers.dev/mha-logo.svg",
-  "description": "منصة أكاديمية مستقلة لنشر وتبادل المواد التعليمية: مذكرات، ملخصات، مراجع، ودورات.",
+  "description": "منصة أكاديمية مستقلة لنشر وتبادل المذكرات والملخصات الدراسية.",
   "slogan": "حيث العلم يُنشر",
   "inLanguage": "ar"
 }
@@ -465,54 +465,6 @@
     font-size: 0.75rem;
     padding: 5px 12px;
   }
-
-  /* ===== البطاقات القانونية ===== */
-  .legal-card {
-    display: block;
-    background: #FDFBF6;
-    border: 1px dashed var(--border);
-    border-radius: 3px;
-    padding: 14px 16px;
-    margin-top: 12px;
-    text-decoration: none;
-    transition: all 0.3s;
-    text-align: center;
-  }
-  .legal-card:hover {
-    background: #fff;
-    border-style: solid;
-    border-color: var(--gold);
-    transform: translateY(-1px);
-    box-shadow: 0 2px 6px rgba(27,58,92,0.06);
-  }
-  .legal-card-title {
-    color: var(--navy);
-    font-weight: 700;
-    font-size: 0.85rem;
-    letter-spacing: 1px;
-  }
-  .legal-card-title::before {
-    content: "◆ ";
-    color: var(--gold);
-    font-size: 0.7rem;
-  }
-  .legal-card-sub {
-    color: #999;
-    font-size: 0.72rem;
-    margin-top: 4px;
-  }
-
-  .sidebar-title {
-    color: var(--navy);
-    font-size: 0.85rem;
-    letter-spacing: 2px;
-    font-weight: 700;
-    text-align: center;
-    margin-bottom: 12px;
-    padding-bottom: 8px;
-    border-bottom: 1px solid var(--border);
-  }
-  .sidebar-title::before { content: "◆ "; color: var(--gold); }
 </style>
 </head>
 <body>
@@ -554,17 +506,17 @@
     <h2>نموذج النشر</h2>
     <div class="field">
       <div class="field-head">
-        <label for="entity">اسم الكيان أو المدرّس</label>
+        <label for="entity">اسم الكيان المعلن</label>
         <span class="field-meta" id="entityMeta">0 كلمة · 0/80</span>
       </div>
-      <input id="entity" maxlength="80" placeholder="مثال: مركز تعليمي · مدرّس · قناة · مكتبة">
+      <input id="entity" maxlength="80" placeholder="مثال: مركز النور التعليمي">
     </div>
     <div class="field">
       <div class="field-head">
         <label for="desc">وصف الإعلان</label>
         <span class="field-meta" id="descMeta">0 كلمة · 0/1500</span>
       </div>
-      <textarea id="desc" maxlength="1500" placeholder="اكتب وصفاً واضحاً: مذكرة، ملخص، دورة، درس، أو خدمة تعليمية"></textarea>
+      <textarea id="desc" maxlength="1500" placeholder="اكتب وصفاً واضحاً للمذكرة أو الدرس أو الكورس"></textarea>
     </div>
     <div class="field">
       <div class="field-head">
@@ -586,7 +538,7 @@
 
   <div class="notice">
     <strong>تنبيه</strong>
-    المحتوى المعروض مسؤولية أصحابه. المنصة وسيط تقني لا يتحمل مسؤولية التعاملات.
+    أي تعامل تقوم به على هذا الموقع هو على مسؤوليتك الشخصية وحدك.
   </div>
 
 </div>
@@ -644,6 +596,7 @@
     return m + "د";
   }
 
+  // ===== توحيد رابط تليجرام =====
   function normalizeTelegram(input) {
     let s = (input || "").toString().trim();
     s = s.replace(/^@/, "");
@@ -935,27 +888,59 @@
     `;
   }
 
-  function renderLegalRight() {
-    return `
-      <div class="sidebar-title">سياسة الخصوصية</div>
-      <a class="legal-card" href="/privacy.html">
-        <div class="legal-card-title">سياسة الخصوصية</div>
-        <div class="legal-card-sub">لا نجمع بياناتك</div>
-      </a>
-    `;
-  }
-
-  function renderLegalLeft() {
-    return `
-      <div class="sidebar-title">شروط الاستخدام</div>
-      <a class="legal-card" href="/terms.html">
-        <div class="legal-card-title">شروط الاستخدام</div>
-        <div class="legal-card-sub">القواعد والأحكام</div>
-      </a>
-    `;
-  }
-
   async function loadFeatured() {
     try {
       const res = await fetch('/featured.json?v=' + Date.now());
-      if (!res.ok)
+      if (!res.ok) return;
+      const list = await res.json();
+
+      if (!Array.isArray(list) || list.length === 0) return;
+
+      const half = Math.ceil(list.length / 2);
+      const leftItems = list.slice(0, half);
+      const rightItems = list.slice(half);
+
+      document.getElementById("sidebarLeft").innerHTML =
+        leftItems.map(renderFeaturedCard).join("");
+      document.getElementById("sidebarRight").innerHTML =
+        rightItems.map(renderFeaturedCard).join("");
+
+      document.getElementById("featuredList").innerHTML =
+        list.map(renderFeaturedCard).join("");
+      document.getElementById("featuredWrap").style.display = "block";
+    } catch (e) {}
+  }
+
+  async function loadTicker() {
+    try {
+      const res = await fetch('/ticker.json?v=' + Date.now());
+      if (!res.ok) return;
+      const data = await res.json();
+
+      if (!data || !data.enabled || !data.text) return;
+
+      const $bar = document.getElementById("tickerBar");
+      const $text = document.getElementById("tickerText");
+      const $fallback = document.getElementById("fallbackMarquee");
+
+      $text.textContent = data.text;
+      $bar.href = data.telegram || "#";
+
+      $bar.style.display = "flex";
+      $fallback.style.display = "none";
+    } catch (e) {}
+  }
+
+  fetchAds();
+  loadFeatured();
+  loadTicker();
+
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/service-worker.js').catch(() => {});
+    });
+  }
+</script>
+
+</body>
+</html>
