@@ -1,4 +1,10 @@
+# السماح لكافة محركات البحث بالزحف إلى الموقع
 User-agent: *
 Allow: /
 
+# منع الزحف إلى المجلدات والملفات البرمجية أو الداخلية (إن وجدت)
+Disallow: /api/
+Disallow: /*.json$
+
+# رابط خريطة الموقع لمساعدة عناكب جوجل على التكشيف السريع
 Sitemap: https://mha-explorer.mhaapp.workers.dev/sitemap.xml
