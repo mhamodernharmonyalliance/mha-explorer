@@ -3,7 +3,6 @@ const FIREBASE_SIGNIN = "https://identitytoolkit.googleapis.com/v1/accounts:sign
 
 const MAX_ENTITY = 80;
 const MAX_DESC = 1500;
-const ALLOWED_TG = /^https?:\/\/(t\.me|telegram\.me)\//i;
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 let tokenCache = { token: null, expiry: 0 };
@@ -43,19 +42,17 @@ async function handlePublish(request, env) {
     const body = await request.json();
     const entity = (body.entity || "").toString().trim();
     const description = (body.description || "").toString().trim();
-    const telegram = (body.telegram || "").toString().trim();
     const authorId = (body.authorId || "").toString().trim();
     const deleteKey = (body.deleteKey || "").toString().trim();
 
-    if (!entity || !description || !telegram || !authorId || !deleteKey) {
+    // التعديل الأول: إزالة التحقق من متغير telegram
+    if (!entity || !description || !authorId || !deleteKey) {
       return jsonResponse({ error: "missing_fields" }, 400);
     }
     if (entity.length > MAX_ENTITY || description.length > MAX_DESC) {
       return jsonResponse({ error: "too_long" }, 400);
     }
-    if (!ALLOWED_TG.test(telegram)) {
-      return jsonResponse({ error: "invalid_telegram" }, 400);
-    }
+
     if (authorId.length > 64 || deleteKey.length > 64) {
       return jsonResponse({ error: "invalid_meta" }, 400);
     }
@@ -63,10 +60,11 @@ async function handlePublish(request, env) {
     const token = await getToken(env);
     const now = Date.now();
 
+    // التعديل الثاني: إزالة telegram من كائن البيانات المرسلة إلى Firebase
     const adsRes = await fetch(`${FIREBASE_DB}/ads.json?auth=${token}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ entity, description, telegram, authorId, createdAt: now })
+      body: JSON.stringify({ entity, description, authorId, createdAt: now })
     });
     if (!adsRes.ok) throw new Error("ads_write_failed");
     const adsData = await adsRes.json();
