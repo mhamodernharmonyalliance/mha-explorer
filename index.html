@@ -28,7 +28,6 @@
 <link rel="apple-touch-icon" href="/mha-logo.svg">
 <meta name="theme-color" content="#1B3A5C">
 
-<!-- ═══════════ تليجرام Mini App ═══════════ -->
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script>
   if (window.Telegram && window.Telegram.WebApp) {
@@ -36,7 +35,6 @@
     window.Telegram.WebApp.expand();
   }
 </script>
-<!-- ═══════════ نهاية تليجرام ═══════════ -->
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -315,14 +313,6 @@
     word-wrap: break-word;
     line-height: 1.7;
   }
-  .ad-tg {
-    color: #B8942C;
-    font-size: 0.8rem;
-    font-family: monospace;
-    word-break: break-all;
-    text-decoration: none;
-  }
-  .ad-tg:hover { text-decoration: underline; }
   .ad-date {
     color: #bbb;
     font-size: 0.7rem;
@@ -528,12 +518,6 @@
       </div>
       <textarea id="desc" maxlength="1500" placeholder="اكتب وصفاً واضحاً للمذكرة أو الدرس أو الكورس"></textarea>
     </div>
-    <div class="field">
-      <div class="field-head">
-        <label for="tg">رابط التواصل (تليجرام)</label>
-      </div>
-      <input id="tg" placeholder="t.me/username أو @username أو username">
-    </div>
     <button id="publish">نشر الإعلان</button>
   </div>
 
@@ -568,7 +552,6 @@
 
   const $entity = document.getElementById("entity");
   const $desc   = document.getElementById("desc");
-  const $tg     = document.getElementById("tg");
   const $btn    = document.getElementById("publish");
   const $list   = document.getElementById("list");
   const $loadMore = document.getElementById("loadMore");
@@ -606,15 +589,6 @@
     return m + "د";
   }
 
-  function normalizeTelegram(input) {
-    let s = (input || "").toString().trim();
-    s = s.replace(/^@/, "");
-    s = s.replace(/^(https?:\/\/)?(www\.)?(t\.me|telegram\.me)\//i, "");
-    s = s.replace(/\/+$/, "");
-    if (!/^[a-zA-Z0-9_]{3,32}$/.test(s)) return null;
-    return "https://t.me/" + s;
-  }
-
   $entity.addEventListener("input", () => updateMeta($entity, $entityMeta, MAX_ENTITY));
   $desc.addEventListener("input", () => updateMeta($desc, $descMeta, MAX_DESC));
 
@@ -649,10 +623,9 @@
   $btn.addEventListener("click", async () => {
     const entity = $entity.value.trim();
     const desc   = $desc.value.trim();
-    const tgRaw  = $tg.value.trim();
 
-    if (!entity || !desc || !tgRaw) {
-      alert("املأ الحقول الثلاثة.");
+    if (!entity || !desc) {
+      alert("املأ اسم الكيان ووصف الإعلان.");
       return;
     }
     if (entity.length > MAX_ENTITY) {
@@ -661,12 +634,6 @@
     }
     if (desc.length > MAX_DESC) {
       alert(`الوصف يجب ألا يتجاوز ${MAX_DESC} حرفاً.`);
-      return;
-    }
-
-    const tgFinal = normalizeTelegram(tgRaw);
-    if (!tgFinal) {
-      alert("رابط تليجرام غير صحيح.\nأمثلة: t.me/durov · @durov · durov");
       return;
     }
 
@@ -690,7 +657,6 @@
         body: JSON.stringify({
           entity: entity,
           description: desc,
-          telegram: tgFinal,
           authorId: MY_AUTHOR_ID,
           deleteKey: key
         })
@@ -707,7 +673,6 @@
 
       $entity.value = "";
       $desc.value = "";
-      $tg.value = "";
       updateMeta($entity, $entityMeta, MAX_ENTITY);
       updateMeta($desc, $descMeta, MAX_DESC);
 
@@ -774,7 +739,6 @@
             ◆ ${esc(ad.entity)}
           </div>
           <div class="ad-desc">${esc(ad.description)}</div>
-          <a class="ad-tg" href="${esc(ad.telegram)}" target="_blank" rel="noopener">${esc(ad.telegram)}</a>
           <div class="ad-date">${date}</div>
           ${isMine ? `
             <div class="ad-actions">
@@ -887,12 +851,14 @@
     const badge = item.badge
       ? `<div class="featured-badge">${esc(item.badge)}</div>`
       : '';
+    const link = item.link || item.telegram || '';
+    const hasLink = /^https?:\/\//i.test(link);
     return `
       <div class="featured">
         ${badge}
         <div class="featured-entity">◆ ${esc(item.entity || '')}</div>
         <div class="featured-desc">${esc(item.description || '')}</div>
-        ${item.telegram ? `<a class="featured-tg" href="${esc(item.telegram)}" target="_blank" rel="noopener">فتح الرابط →</a>` : ''}
+        ${hasLink ? `<a class="featured-tg" href="${esc(link)}" target="_blank" rel="noopener">فتح الرابط →</a>` : ''}
       </div>
     `;
   }
