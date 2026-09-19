@@ -8,7 +8,7 @@
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#0088cc">
 
-  <script src="https://sad.adsgram.ai/js/sad-index.js" onerror="console.error('فشل تحميل سكريبت Adsgram!')"></script>
+  <script src="https://sad.adsgram.ai/js/sad-index.js"></script>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
   <style>
@@ -21,7 +21,6 @@
     .ad-card { background: #1e1e1e; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #333; }
     .ad-card h3 { margin-top: 0; color: #0088cc; }
     .error-msg { color: #ff6b6b; text-align: center; padding: 10px; background: #331111; border-radius: 8px; }
-    .debug-info { font-size: 12px; color: #888; margin-top: 20px; text-align: center; border-top: 1px dashed #333; padding-top: 10px;}
   </style>
 </head>
 <body>
@@ -37,17 +36,10 @@
 
     <h2>الإعلانات المتاحة</h2>
     <div id="adsList"><p style="text-align:center;">جاري التحميل...</p></div>
-    
-    <div id="debugConsole" class="debug-info"></div>
   </div>
 
   <script>
-    const debugConsole = document.getElementById('debugConsole');
-    const logDebug = (msg) => {
-        debugConsole.innerHTML += `<div>${msg}</div>`;
-        console.log(msg);
-    };
-
+    // 1. تحديد هوية المستخدم
     let authorId;
     const tg = window.Telegram?.WebApp;
     
@@ -55,7 +47,6 @@
         tg.ready();
         tg.expand();
         authorId = String(tg.initDataUnsafe.user.id);
-        logDebug(`✅ تم التعرف على مستخدم تليجرام: ${authorId}`);
     } else {
         let guestId = localStorage.getItem('mha_guest_id');
         if (!guestId) {
@@ -63,42 +54,31 @@
             localStorage.setItem('mha_guest_id', guestId);
         }
         authorId = guestId;
-        logDebug(`⚠️ لم يتم العثور على بيانات تليجرام. تم استخدام معرف زائر: ${authorId}`);
     }
 
+    // 2. تهيئة Adsgram
     let AdController = null;
-    function initAdsgram() {
-        if (window.Adsgram) {
-            try {
-                AdController = window.Adsgram.init({ blockId: "48760" }); // الـ ID الخاص بك
-                logDebug("✅ تم تهيئة Adsgram بنجاح.");
-            } catch (e) {
-                logDebug("❌ فشل تهيئة Adsgram: " + e.message);
-            }
-        } else {
-            logDebug("❌ مكتبة Adsgram غير موجودة في الصفحة (window.Adsgram is undefined).");
-            logDebug("💡 تأكد من إيقاف مانع الإعلانات وفتح الرابط من داخل تليجرام.");
-        }
+    if (window.Adsgram) {
+        AdController = window.Adsgram.init({ blockId: "48760" });
     }
-    
-    setTimeout(initAdsgram, 1500); // ننتظر قليلاً لتحميل السكريبت
 
     async function showAdsgramVideo() {
       if (!AdController) {
-        const skip = confirm("⚠️ نظام الإعلانات لا يعمل حالياً (بيئة اختبار).\nهل تريد تخطي الإعلان والمتابعة للاختبار؟");
-        return skip; 
+        alert("نظام الإعلانات غير متاح حالياً. يرجى المحاولة لاحقاً.");
+        return false;
       }
       try {
         const result = await AdController.show();
-        console.log("Ad completed:", result);
+        console.log("Ad completed successfully:", result);
         return true;
       } catch (error) {
-        console.warn("Ad skipped:", error);
+        console.warn("Ad skipped or failed:", error);
         alert("يجب عليك مشاهدة الإعلان حتى النهاية لإتمام العملية!");
         return false;
       }
     }
 
+    // 3. دالة النشر
     async function publishAd() {
       const entity = document.getElementById("entity").value.trim();
       const description = document.getElementById("description").value.trim();
@@ -137,7 +117,7 @@
           document.getElementById("deleteKey").value = "";
           loadAds();
         } else {
-          alert("حدث خطأ أثناء النشر: " + (data.details || data.error || "خطأ غير معروف"));
+          alert("حدث خطأ أثناء النشر: " + (data.error || "خطأ غير معروف"));
         }
       } catch (err) {
         alert("فشل الاتصال بالسيرفر");
@@ -147,6 +127,7 @@
       }
     }
 
+    // 4. دالة جمع النقطة (Boost)
     async function boostAd(id) {
       const watched = await showAdsgramVideo();
       if (!watched) return;
@@ -166,13 +147,14 @@
           const hoursLeft = Math.ceil(data.waitMs / (1000 * 60 * 60));
           alert(`يرجى الانتظار ${hoursLeft} ساعة تقريباً للحصول على النقطة القادمة.`);
         } else {
-          alert("خطأ: " + (data.details || data.error || "عذراً، لا يمكنك زيادة نقاط هذا الإعلان"));
+          alert("خطأ: " + (data.error || "عذراً، لا يمكنك زيادة نقاط هذا الإعلان"));
         }
       } catch (err) {
         alert("فشل الاتصال بالسيرفر");
       }
     }
 
+    // 5. دالة حذف الإعلان
     async function deleteAd(id) {
       const deleteKey = prompt("أدخل مفتاح الحذف السري الذي كتبته عند النشر:");
       if (!deleteKey) return;
@@ -189,13 +171,14 @@
           alert("تم حذف الإعلان بنجاح");
           loadAds();
         } else {
-          alert("فشل الحذف: " + (data.details || data.error || "مفتاح غير صحيح أو خطأ في الصلاحيات"));
+          alert("فشل الحذف: " + (data.error || "مفتاح غير صحيح أو خطأ في الصلاحيات"));
         }
       } catch (err) {
         alert("فشل الاتصال بالسيرفر");
       }
     }
 
+    // 6. جلب الإعلانات وعرضها
     async function loadAds() {
       const container = document.getElementById("adsList");
       try {
