@@ -1,921 +1,228 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MHA Explorer</title>
 
-<title>MHA Explorer — حيث العلم يُنشر | منصة أكاديمية</title>
-<meta name="description" content="MHA Explorer — منصة أكاديمية مستقلة لنشر وتبادل المذكرات والملخصات الدراسية.">
-<meta name="author" content="MHA Explorer">
-<meta name="robots" content="index, follow">
-<meta name="google-site-verification" content="google7f4fbd39717d3a1c">
-<link rel="canonical" href="https://mha-explorer.mhaapp.workers.dev/">
+  <!-- Adsgram SDK Integration -->
+  <script src="https://sad.adsgram.ai/js/sad-index.js"></script>
+  <!-- Telegram Web App SDK -->
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
-<meta property="og:type" content="website">
-<meta property="og:url" content="https://mha-explorer.mhaapp.workers.dev/">
-<meta property="og:title" content="MHA Explorer — حيث العلم يُنشر">
-<meta property="og:description" content="منصة أكاديمية مستقلة لنشر وتبادل المذكرات والملخصات الدراسية.">
-<meta property="og:image" content="https://mha-explorer.mhaapp.workers.dev/mha-logo.svg">
-<meta property="og:locale" content="ar_AR">
-
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="MHA Explorer — حيث العلم يُنشر">
-<meta name="twitter:description" content="منصة أكاديمية مستقلة لنشر وتبادل المذكرات والملخصات الدراسية.">
-<meta name="twitter:image" content="https://mha-explorer.mhaapp.workers.dev/mha-logo.svg">
-
-<link rel="manifest" href="/manifest.json">
-<link rel="icon" type="image/svg+xml" href="/mha-logo.svg">
-<link rel="apple-touch-icon" href="/mha-logo.svg">
-<meta name="theme-color" content="#1B3A5C">
-
-<script src="https://telegram.org/js/telegram-web-app.js"></script>
-<script>
-  if (window.Telegram && window.Telegram.WebApp) {
-    window.Telegram.WebApp.ready();
-    window.Telegram.WebApp.expand();
-  }
-</script>
-
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Naskh+Arabic:wght@400;700&family=Noto+Serif:wght@400;700&display=swap" rel="stylesheet">
-
-<script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "EducationalOrganization",
-  "name": "MHA Explorer",
-  "alternateName": "MHA",
-  "url": "https://mha-explorer.mhaapp.workers.dev/",
-  "logo": "https://mha-explorer.mhaapp.workers.dev/mha-logo.svg",
-  "description": "منصة أكاديمية مستقلة لنشر وتبادل المذكرات والملخصات الدراسية.",
-  "slogan": "حيث العلم يُنشر",
-  "inLanguage": "ar"
-}
-</script>
-
-<style>
-  :root {
-    --navy: #1B3A5C;
-    --gold: #D4A93C;
-    --paper: #F5F0E6;
-    --crimson: #B22222;
-    --border: rgba(212, 169, 60, 0.35);
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-
-  body {
-    font-family: 'Noto Naskh Arabic', 'Noto Serif', serif;
-    background: var(--paper);
-    color: #1A1A1A;
-    line-height: 1.8;
-
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 20px;
-    max-width: 1280px;
-    margin: 0 auto;
-    padding: 20px;
-  }
-
-  .sidebar { display: none; }
-
-  @media (min-width: 1080px) {
+  <style>
     body {
-      grid-template-columns: minmax(180px, 1fr) 640px minmax(180px, 1fr);
-      gap: 24px;
-      justify-content: center;
+      font-family: Arial, sans-serif;
+      background-color: #121212;
+      color: #ffffff;
+      padding: 20px;
+      margin: 0;
     }
-    .sidebar { display: block; }
-    #featuredWrap { display: none !important; }
-  }
-
-  .wrap { max-width: 640px; margin: 0 auto; width: 100%; min-width: 0; }
-
-  .hero {
-    text-align: center;
-    padding: 30px 0 20px;
-    border-bottom: 1px solid var(--border);
-    margin-bottom: 24px;
-  }
-  .hero img { width: 120px; height: 120px; object-fit: contain; }
-  .hero h1 {
-    color: var(--navy);
-    letter-spacing: 4px;
-    margin-top: 10px;
-    font-size: 1.8rem;
-  }
-  .hero p { color: var(--crimson); letter-spacing: 2px; margin-top: 4px; }
-
-  .marquee-bar {
-    background: var(--navy);
-    border: 1px solid var(--gold);
-    border-radius: 30px;
-    margin-top: 16px;
-    padding: 10px 0;
-    overflow: hidden;
-    position: relative;
-  }
-  .marquee-bar::before,
-  .marquee-bar::after {
-    content: "";
-    position: absolute;
-    top: 0;
-    width: 30px;
-    height: 100%;
-    z-index: 2;
-    pointer-events: none;
-  }
-  .marquee-bar::before {
-    right: 0;
-    background: linear-gradient(to left, var(--navy), transparent);
-  }
-  .marquee-bar::after {
-    left: 0;
-    background: linear-gradient(to right, var(--navy), transparent);
-  }
-  .marquee-track {
-    display: inline-flex;
-    white-space: nowrap;
-    animation: marquee 25s linear infinite;
-    will-change: transform;
-  }
-  .marquee-track span {
-    color: var(--gold);
-    font-size: 0.9rem;
-    letter-spacing: 3px;
-    font-weight: 700;
-    padding: 0 40px;
-  }
-  .marquee-track span::before {
-    content: "◆";
-    color: var(--paper);
-    margin-left: 12px;
-    font-size: 0.7rem;
-  }
-  @keyframes marquee {
-    0%   { transform: translateX(0); }
-    100% { transform: translateX(-50%); }
-  }
-
-  .ticker-bar {
-    margin-top: 16px;
-    background: #FDFBF6;
-    border: 1px solid var(--gold);
-    border-radius: 30px;
-    padding: 10px 16px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
-    text-decoration: none;
-    transition: all 0.3s;
-    position: relative;
-    overflow: hidden;
-  }
-  .ticker-bar:hover {
-    background: #fff;
-    border-color: var(--navy);
-    transform: translateY(-1px);
-    box-shadow: 0 3px 10px rgba(27,58,92,0.08);
-  }
-  .ticker-text {
-    color: var(--navy);
-    font-weight: 700;
-    font-size: 0.95rem;
-    letter-spacing: 1px;
-    flex: 1;
-    text-align: center;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    position: relative;
-    z-index: 2;
-  }
-  .ticker-tg {
-    flex-shrink: 0;
-    width: 28px;
-    height: 28px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--gold);
-    border-radius: 50%;
-    color: var(--navy);
-    font-size: 0.9rem;
-    transition: all 0.3s;
-  }
-  .ticker-bar:hover .ticker-tg {
-    background: var(--navy);
-    color: var(--gold);
-    transform: rotate(-15deg);
-  }
-
-  .card {
-    background: #fff;
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    padding: 22px;
-    margin-bottom: 20px;
-    box-shadow: 0 2px 8px rgba(27,58,92,0.05);
-  }
-  .card h2 {
-    color: var(--navy);
-    font-size: 1rem;
-    margin-bottom: 14px;
-    letter-spacing: 1px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-  .card h2::before { content: "◆ "; color: var(--gold); }
-  .counter-badge {
-    font-size: 0.72rem;
-    color: #999;
-    letter-spacing: 1px;
-    font-weight: 400;
-  }
-  .field { margin-bottom: 14px; }
-  .field-head {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 6px;
-  }
-  .field-head label {
-    color: var(--navy);
-    font-size: 0.88rem;
-    letter-spacing: 1px;
-  }
-  .field-head label::before {
-    content: "◆ ";
-    color: var(--gold);
-    font-size: 0.7rem;
-  }
-  .field-meta {
-    font-size: 0.72rem;
-    color: #999;
-    font-family: 'Courier New', monospace;
-    letter-spacing: 0.5px;
-  }
-  .field-meta.warn { color: var(--crimson); font-weight: 700; }
-  input, textarea {
-    width: 100%;
-    padding: 10px 12px;
-    background: #FDFBF6;
-    border: 1px solid var(--border);
-    border-radius: 3px;
-    font-family: inherit;
-    font-size: 1rem;
-    resize: vertical;
-  }
-  input:focus, textarea:focus {
-    outline: none;
-    border-color: var(--navy);
-    background: #fff;
-  }
-  textarea { min-height: 120px; line-height: 1.8; }
-  button {
-    width: 100%;
-    padding: 12px;
-    background: var(--navy);
-    color: var(--paper);
-    border: 1px solid var(--gold);
-    border-radius: 3px;
-    font-family: inherit;
-    font-size: 1rem;
-    cursor: pointer;
-    letter-spacing: 2px;
-    transition: all 0.3s;
-  }
-  button:hover { background: var(--gold); color: var(--navy); }
-  button:disabled { background: #ccc; cursor: not-allowed; }
-
-  .ad {
-    background: #FDFBF6;
-    border: 1px solid rgba(212, 169, 60, 0.18);
-    border-radius: 3px;
-    padding: 12px 14px;
-    margin-bottom: 8px;
-    opacity: 0.96;
-  }
-  .ad-entity {
-    color: #2A4A6C;
-    font-weight: 600;
-    margin-bottom: 4px;
-    font-size: 0.95rem;
-  }
-  .ad-desc {
-    color: #666;
-    font-size: 0.85rem;
-    margin-bottom: 6px;
-    white-space: pre-wrap;
-    word-wrap: break-word;
-    line-height: 1.7;
-  }
-  .ad-date {
-    color: #bbb;
-    font-size: 0.7rem;
-    margin-top: 4px;
-  }
-  .ad-mine {
-    display: inline-block;
-    background: var(--gold);
-    color: var(--navy);
-    font-size: 0.62rem;
-    padding: 2px 8px;
-    border-radius: 10px;
-    margin-right: 6px;
-    font-weight: 700;
-  }
-  .ad-points {
-    display: inline-block;
-    background: var(--navy);
-    color: var(--gold);
-    font-size: 0.68rem;
-    padding: 2px 8px;
-    border-radius: 10px;
-    margin-right: 6px;
-    font-weight: 700;
-    letter-spacing: 1px;
-  }
-  .ad-actions {
-    margin-top: 8px;
-    padding-top: 8px;
-    border-top: 1px dashed var(--border);
-  }
-  .btn-delete {
-    width: auto;
-    padding: 4px 12px;
-    font-size: 0.72rem;
-    background: var(--crimson);
-    border-color: var(--crimson);
-    color: #fff;
-    letter-spacing: 1px;
-  }
-  .btn-delete:hover { background: #8B1A1A; color: #fff; }
-  .btn-boost {
-    width: auto;
-    padding: 4px 14px;
-    font-size: 0.72rem;
-    background: var(--gold);
-    border-color: var(--gold);
-    color: var(--navy);
-    letter-spacing: 1px;
-    margin-left: 6px;
-    font-weight: 700;
-  }
-  .btn-boost:hover { background: var(--navy); color: var(--gold); }
-  .btn-boost:disabled {
-    background: #e8e8e8;
-    border-color: #e8e8e8;
-    color: #999;
-    cursor: not-allowed;
-  }
-  .btn-load-more {
-    background: transparent;
-    color: var(--navy);
-    border: 1px dashed var(--border);
-    margin-top: 8px;
-  }
-  .btn-load-more:hover {
-    background: var(--gold);
-    color: var(--navy);
-    border-style: solid;
-  }
-  .empty {
-    text-align: center;
-    color: #aaa;
-    padding: 20px;
-    font-size: 0.9rem;
-  }
-  .notice {
-    background: #FBF6EC;
-    border: 1px dashed var(--crimson);
-    border-radius: 4px;
-    padding: 14px 18px;
-    color: var(--crimson);
-    font-size: 0.85rem;
-    line-height: 1.9;
-    text-align: center;
-    margin-bottom: 20px;
-  }
-  .notice strong { display: block; margin-bottom: 4px; }
-
-  .featured {
-    background: linear-gradient(135deg, #FDFBF6 0%, #FBF6EC 100%);
-    border: 1px solid var(--gold);
-    border-radius: 3px;
-    padding: 16px;
-    margin-bottom: 10px;
-    position: relative;
-  }
-  .featured:last-child { margin-bottom: 0; }
-  .featured-badge {
-    display: inline-block;
-    background: var(--gold);
-    color: var(--navy);
-    font-size: 0.65rem;
-    padding: 2px 10px;
-    border-radius: 10px;
-    font-weight: 700;
-    letter-spacing: 1px;
-    margin-bottom: 8px;
-  }
-  .featured-entity {
-    color: var(--navy);
-    font-weight: 700;
-    font-size: 1.05rem;
-    margin-bottom: 6px;
-  }
-  .featured-desc {
-    color: #444;
-    font-size: 0.9rem;
-    margin-bottom: 10px;
-    white-space: pre-wrap;
-    word-wrap: break-word;
-  }
-  .featured-tg {
-    display: inline-block;
-    color: var(--navy);
-    background: var(--gold);
-    padding: 6px 16px;
-    border-radius: 20px;
-    font-size: 0.82rem;
-    text-decoration: none;
-    letter-spacing: 1px;
-    transition: all 0.3s;
-  }
-  .featured-tg:hover {
-    background: var(--navy);
-    color: var(--gold);
-  }
-
-  .sidebar .featured {
-    padding: 14px;
-  }
-  .sidebar .featured-entity {
-    font-size: 0.95rem;
-  }
-  .sidebar .featured-desc {
-    font-size: 0.82rem;
-    line-height: 1.7;
-  }
-  .sidebar .featured-tg {
-    font-size: 0.75rem;
-    padding: 5px 12px;
-  }
-</style>
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    input, textarea, button {
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 12px;
+      border-radius: 8px;
+      border: 1px solid #333;
+      box-sizing: border-box;
+    }
+    input, textarea {
+      background-color: #1e1e1e;
+      color: #fff;
+    }
+    button {
+      background-color: #0088cc;
+      color: white;
+      font-weight: bold;
+      border: none;
+      cursor: pointer;
+    }
+    button:disabled {
+      background-color: #555;
+      cursor: not-allowed;
+    }
+    .ad-card {
+      background: #1e1e1e;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+      border: 1px solid #333;
+    }
+  </style>
 </head>
 <body>
 
-<aside id="sidebarRight" class="sidebar"></aside>
+  <div class="container">
+    <h2>نشر إعلان جديد</h2>
+    <input type="text" id="entity" placeholder="عنوان الإعلان / الكيان" maxlength="80">
+    <textarea id="description" placeholder="وصف الإعلان" rows="4" maxlength="1500"></textarea>
+    <input type="password" id="deleteKey" placeholder="مفتاح الحذف الخفي">
+    <button id="publishBtn" onclick="publishAd()">نشر (شاهد إعلان لتأكيد النشر) 🎬</button>
 
-<div class="wrap">
+    <hr style="border-color: #333; margin: 30px 0;">
 
-  <header class="hero">
-    <img src="/mha-logo.svg" alt="MHA Explorer">
-    <h1>MHA Explorer</h1>
-    <p>حيث العلم يُنشر</p>
-
-    <a id="tickerBar" class="ticker-bar" style="display:none;" href="#" target="_blank" rel="noopener">
-      <span class="ticker-text" id="tickerText"></span>
-      <span class="ticker-tg">✈</span>
-    </a>
-
-    <div class="marquee-bar" id="fallbackMarquee">
-      <div class="marquee-track">
-        <span>MHA حيث الكل يشارك</span>
-        <span>MHA حيث الكل يشارك</span>
-        <span>MHA حيث الكل يشارك</span>
-        <span>MHA حيث الكل يشارك</span>
-        <span>MHA حيث الكل يشارك</span>
-        <span>MHA حيث الكل يشارك</span>
-      </div>
-    </div>
-  </header>
-
-  <div id="featuredWrap" style="display:none;">
-    <div class="card">
-      <h2>إعلانات مميزة</h2>
-      <div id="featuredList"></div>
-    </div>
+    <h2>الإعلانات المتاحة</h2>
+    <div id="adsList"></div>
   </div>
 
-  <div class="card">
-    <h2>نموذج النشر</h2>
-    <div class="field">
-      <div class="field-head">
-        <label for="entity">اسم الكيان المعلن</label>
-        <span class="field-meta" id="entityMeta">0 كلمة · 0/80</span>
-      </div>
-      <input id="entity" maxlength="80" placeholder="مثال: مركز النور التعليمي">
-    </div>
-    <div class="field">
-      <div class="field-head">
-        <label for="desc">وصف الإعلان</label>
-        <span class="field-meta" id="descMeta">0 كلمة · 0/1500</span>
-      </div>
-      <textarea id="desc" maxlength="1500" placeholder="اكتب وصفاً واضحاً للمذكرة أو الدرس أو الكورس"></textarea>
-    </div>
-    <button id="publish">نشر الإعلان</button>
-  </div>
+  <script>
+    // تهيئة Telegram WebApp
+    const tg = window.Telegram?.WebApp;
+    if (tg) tg.ready();
 
-  <div class="card">
-    <h2>
-      الإعلانات المنشورة
-      <span class="counter-badge" id="counter">0</span>
-    </h2>
-    <div id="list"><div class="empty">جاري التحميل...</div></div>
-    <button id="loadMore" class="btn-load-more" style="display:none;">تحميل المزيد</button>
-  </div>
+    // معرف المستخدم المأخوذ من تليجرام أو معرّف عشوائي مؤقت
+    const authorId = tg?.initDataUnsafe?.user?.id ? String(tg.initDataUnsafe.user.id) : "guest_user";
 
-  <div class="notice">
-    <strong>تنبيه</strong>
-    أي تعامل تقوم به على هذا الموقع هو على مسؤوليتك الشخصية وحدك.
-  </div>
+    // تهيئة Adsgram بـ BlockID الخاص بك: 48760
+    const AdController = window.Adsgram.init({ blockId: "48760" });
 
-</div>
-
-<aside id="sidebarLeft" class="sidebar"></aside>
-
-<script>
-  const FIREBASE_URL = "https://mhaexplorer-ac7a7-default-rtdb.europe-west1.firebasedatabase.app";
-  const KEY_STORE = "MHA_MY_KEYS";
-  const AUTHOR_STORE = "MHA_AUTHOR_ID";
-  const RATE_MS = 5 * 60 * 1000;
-  const PAGE_SIZE = 10;
-  const DAY_MS = 24 * 60 * 60 * 1000;
-
-  const MAX_ENTITY = 80;
-  const MAX_DESC = 1500;
-
-  const $entity = document.getElementById("entity");
-  const $desc   = document.getElementById("desc");
-  const $btn    = document.getElementById("publish");
-  const $list   = document.getElementById("list");
-  const $loadMore = document.getElementById("loadMore");
-  const $counter = document.getElementById("counter");
-  const $entityMeta = document.getElementById("entityMeta");
-  const $descMeta = document.getElementById("descMeta");
-
-  let allAds = [];
-  let shownCount = 0;
-
-  function esc(s) {
-    return String(s).replace(/[&<>"']/g, c => ({
-      "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
-    })[c]);
-  }
-
-  function wordCount(text) {
-    const t = text.trim();
-    if (!t) return 0;
-    return t.split(/\s+/).length;
-  }
-
-  function updateMeta($input, $meta, max) {
-    const len = $input.value.length;
-    const words = wordCount($input.value);
-    $meta.textContent = `${words} كلمة · ${len}/${max}`;
-    $meta.classList.toggle("warn", len > max * 0.9);
-  }
-
-  function formatWait(ms) {
-    if (ms <= 0) return "";
-    const h = Math.floor(ms / 3600000);
-    const m = Math.floor((ms % 3600000) / 60000);
-    if (h > 0) return h + "س " + m + "د";
-    return m + "د";
-  }
-
-  $entity.addEventListener("input", () => updateMeta($entity, $entityMeta, MAX_ENTITY));
-  $desc.addEventListener("input", () => updateMeta($desc, $descMeta, MAX_DESC));
-
-  function getMyKeys() {
-    try { return JSON.parse(localStorage.getItem(KEY_STORE) || "{}"); }
-    catch (e) { return {}; }
-  }
-  function addMyKey(id, key) {
-    const k = getMyKeys();
-    k[id] = key;
-    localStorage.setItem(KEY_STORE, JSON.stringify(k));
-  }
-  function removeMyKey(id) {
-    const k = getMyKeys();
-    delete k[id];
-    localStorage.setItem(KEY_STORE, JSON.stringify(k));
-  }
-  function newKey() {
-    return Math.random().toString(36).slice(2) + Date.now().toString(36);
-  }
-
-  function getMyAuthorId() {
-    let id = localStorage.getItem(AUTHOR_STORE);
-    if (!id) {
-      id = "u_" + Math.random().toString(36).slice(2) + Date.now().toString(36);
-      localStorage.setItem(AUTHOR_STORE, id);
-    }
-    return id;
-  }
-  const MY_AUTHOR_ID = getMyAuthorId();
-
-  $btn.addEventListener("click", async () => {
-    const entity = $entity.value.trim();
-    const desc   = $desc.value.trim();
-
-    if (!entity || !desc) {
-      alert("املأ اسم الكيان ووصف الإعلان.");
-      return;
-    }
-    if (entity.length > MAX_ENTITY) {
-      alert(`اسم الكيان يجب ألا يتجاوز ${MAX_ENTITY} حرفاً.`);
-      return;
-    }
-    if (desc.length > MAX_DESC) {
-      alert(`الوصف يجب ألا يتجاوز ${MAX_DESC} حرفاً.`);
-      return;
+    // دالة مساعدة لمشاهدة الإعلان ومطالبة المستخدم بالانتهاء
+    async function showAdsgramVideo() {
+      try {
+        const result = await AdController.show();
+        console.log("Ad completed successfully:", result);
+        return true;
+      } catch (error) {
+        console.warn("Ad skipped or failed:", error);
+        alert("يجب عليك مشاهدة الإعلان حتى النهاية لإتمام العملية!");
+        return false;
+      }
     }
 
-    const last = Number(localStorage.getItem("MHA_LAST") || 0);
-    const now = Date.now();
-    if (now - last < RATE_MS) {
-      const min = Math.ceil((RATE_MS - (now - last)) / 60000);
-      alert(`انتظر ${min} دقيقة قبل النشر مرة أخرى.`);
-      return;
-    }
+    // 1️⃣ دالة النشر مع شرط مشاهدة الإعلان
+    async function publishAd() {
+      const entity = document.getElementById("entity").value.trim();
+      const description = document.getElementById("description").value.trim();
+      const deleteKey = document.getElementById("deleteKey").value.trim();
 
-    $btn.disabled = true;
-    $btn.textContent = "جاري النشر...";
-
-    const key = newKey();
-
-    try {
-      const res = await fetch("/api/publish", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          entity: entity,
-          description: desc,
-          authorId: MY_AUTHOR_ID,
-          deleteKey: key
-        })
-      });
-
-      const data = await res.json();
-
-      if (!res.ok || !data.ok) {
-        throw new Error(data.error || "fail");
+      if (!entity || !description || !deleteKey) {
+        alert("يرجى ملء جميع الحقول المطلوبة!");
+        return;
       }
 
-      addMyKey(data.id, key);
-      localStorage.setItem("MHA_LAST", String(now));
+      const btn = document.getElementById("publishBtn");
+      btn.disabled = true;
 
-      $entity.value = "";
-      $desc.value = "";
-      updateMeta($entity, $entityMeta, MAX_ENTITY);
-      updateMeta($desc, $descMeta, MAX_DESC);
-
-      await fetchAds();
-      alert("تم النشر!");
-    } catch (err) {
-      alert("تعذر النشر.");
-    } finally {
-      $btn.disabled = false;
-      $btn.textContent = "نشر الإعلان";
-    }
-  });
-
-  async function fetchAds() {
-    try {
-      const res = await fetch(FIREBASE_URL + "/ads.json");
-      const data = await res.json();
-
-      if (!data) {
-        allAds = [];
-      } else {
-        allAds = Object.keys(data)
-          .map(id => ({ id, ...data[id] }))
-          .sort((a, b) => (b.points || 0) - (a.points || 0) || b.createdAt - a.createdAt);
+      // مشاهدة الإعلان أولاً
+      const watched = await showAdsgramVideo();
+      if (!watched) {
+        btn.disabled = false;
+        return;
       }
 
-      shownCount = 0;
-      $list.innerHTML = "";
-      $counter.textContent = allAds.length;
-      renderNextPage();
+      try {
+        const response = await fetch("/api/publish", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ entity, description, authorId, deleteKey })
+        });
 
-    } catch (err) {
-      $list.innerHTML = '<div class="empty">تعذر التحميل.</div>';
+        const data = await response.json();
+        if (response.ok && data.ok) {
+          alert("تم نشر الإعلان بنجاح!");
+          document.getElementById("entity").value = "";
+          document.getElementById("description").value = "";
+          document.getElementById("deleteKey").value = "";
+          loadAds();
+        } else {
+          alert("حدث خطأ أثناء النشر: " + (data.error || "خطأ غير معروف"));
+        }
+      } catch (err) {
+        alert("فشل الاتصال بالسيرفر");
+      } finally {
+        btn.disabled = false;
+      }
     }
-  }
 
-  function renderNextPage() {
-    if (allAds.length === 0) {
-      $list.innerHTML = '<div class="empty">لا توجد إعلانات بعد.</div>';
-      $loadMore.style.display = "none";
-      return;
+    // 2️⃣ دالة جمع النقطة (Boost) مع شرط مشاهدة الإعلان
+    async function boostAd(id) {
+      // مشاهدة الإعلان أولاً قبل رفع النقاط
+      const watched = await showAdsgramVideo();
+      if (!watched) return;
+
+      try {
+        const response = await fetch("/api/boost", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id, authorId })
+        });
+
+        const data = await response.json();
+        if (response.ok && data.ok) {
+          alert(`تم جمع النقطة بنجاح! النقاط الحالية: ${data.points}`);
+          loadAds();
+        } else if (response.status === 429) {
+          const hoursLeft = Math.ceil(data.waitMs / (1000 * 60 * 60));
+          alert(`يرجى الانتظار ${hoursLeft} ساعة تقريباً للحصول على النقطة القادمة.`);
+        } else {
+          alert("خطأ: " + (data.error || "عذراً، لا يمكنك زيادة نقاط هذا الإعلان"));
+        }
+      } catch (err) {
+        alert("فشل الاتصال بالسيرفر");
+      }
     }
 
-    const nextBatch = allAds.slice(shownCount, shownCount + PAGE_SIZE);
+    // 3️⃣ دالة حذف الإعلان
+    async function deleteAd(id) {
+      const deleteKey = prompt("أدخل مفتاح الحذف الخاص بالإعلان:");
+      if (!deleteKey) return;
 
-    if (shownCount === 0) $list.innerHTML = "";
+      try {
+        const response = await fetch("/api/delete", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id, authorId, deleteKey })
+        });
 
-    const html = nextBatch.map(ad => {
-      const d = new Date(ad.createdAt);
-      const date = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
-      const isMine = ad.authorId && ad.authorId === MY_AUTHOR_ID;
-      const points = ad.points || 0;
-      const lastBoostAt = ad.lastBoostAt || 0;
-      const nextBoostAt = lastBoostAt + DAY_MS;
-      const now = Date.now();
-      const canBoost = now >= nextBoostAt;
-      const waitMs = nextBoostAt - now;
-
-      return `
-        <div class="ad">
-          <div class="ad-entity">
-            ${isMine ? '<span class="ad-mine">إعلاني</span>' : ''}
-            ${points > 0 ? `<span class="ad-points">◆ ${points}</span>` : ''}
-            ◆ ${esc(ad.entity)}
-          </div>
-          <div class="ad-desc">${esc(ad.description)}</div>
-          <div class="ad-date">${date}</div>
-          ${isMine ? `
-            <div class="ad-actions">
-              <button class="btn-boost" data-boost="${ad.id}" ${canBoost ? '' : 'disabled'}>
-                ${canBoost ? '◆ نقطة' : '⏳ ' + formatWait(waitMs)}
-              </button>
-              <button class="btn-delete" data-del="${ad.id}">حذف الإعلان</button>
-            </div>
-          ` : ''}
-        </div>
-      `;
-    }).join("");
-
-    $list.insertAdjacentHTML("beforeend", html);
-    shownCount += nextBatch.length;
-
-    $list.querySelectorAll("[data-del]").forEach(b => {
-      if (b.dataset.bound) return;
-      b.dataset.bound = "1";
-      b.addEventListener("click", () => deleteAd(b.dataset.del));
-    });
-
-    $list.querySelectorAll("[data-boost]").forEach(b => {
-      if (b.dataset.bound) return;
-      b.dataset.bound = "1";
-      b.addEventListener("click", () => boostAd(b.dataset.boost, b));
-    });
-
-    if (shownCount < allAds.length) {
-      $loadMore.style.display = "block";
-      $loadMore.textContent = `تحميل المزيد (${allAds.length - shownCount})`;
-    } else {
-      $loadMore.style.display = "none";
+        const data = await response.json();
+        if (response.ok && data.ok) {
+          alert("تم حذف الإعلان بنجاح");
+          loadAds();
+        } else {
+          alert("فشل الحذف: مفتاح غير صحيح أو خطأ في الصلاحيات");
+        }
+      } catch (err) {
+        alert("فشل الاتصال بالسيرفر");
+      }
     }
-  }
 
-  $loadMore.addEventListener("click", renderNextPage);
+    // جلب الإعلانات وعرضها
+    async function loadAds() {
+      try {
+        const res = await fetch("https://mhaexplorer-ac7a7-default-rtdb.europe-west1.firebasedatabase.app/ads.json");
+        const data = await res.json();
+        const container = document.getElementById("adsList");
+        container.innerHTML = "";
 
-  async function deleteAd(id) {
-    if (!confirm("هل أنت متأكد من حذف هذا الإعلان؟")) return;
-
-    const myKeys = getMyKeys();
-    const myKey = myKeys[id] || "";
-
-    try {
-      const res = await fetch("/api/delete", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          id: id,
-          authorId: MY_AUTHOR_ID,
-          deleteKey: myKey
-        })
-      });
-
-      const data = await res.json();
-
-      if (!res.ok || !data.ok) {
-        if (data.error === "not_allowed") {
-          alert("لا تملك صلاحية حذف هذا الإعلان.");
+        if (!data) {
+          container.innerHTML = "<p>لا توجد إعلانات حالياً.</p>";
           return;
         }
-        throw new Error(data.error || "fail");
+
+        Object.keys(data).forEach(id => {
+          const ad = data[id];
+          const div = document.createElement("div");
+          div.className = "ad-card";
+          div.innerHTML = `
+            <h3>${ad.entity}</h3>
+            <p>${ad.description}</p>
+            <p><small>النقاط: <strong>${ad.points || 0}</strong></small></p>
+            <button onclick="boostAd('${id}')">جمع نقطة 🚀 (مشاهدة إعلان)</button>
+            ${ad.authorId === authorId ? `<button onclick="deleteAd('${id}')" style="background-color: #d9534f; margin-top: 8px;">حذف الإعلان 🗑️</button>` : ''}
+          `;
+          container.appendChild(div);
+        });
+      } catch (e) {
+        console.error("فشل تحميل الإعلانات:", e);
       }
-
-      removeMyKey(id);
-      await fetchAds();
-      alert("تم الحذف.");
-    } catch (err) {
-      alert("تعذر الحذف.");
     }
-  }
 
-  async function boostAd(id, btn) {
-    btn.disabled = true;
-    const original = btn.textContent;
-    btn.textContent = "...";
-
-    try {
-      const res = await fetch("/api/boost", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: id, authorId: MY_AUTHOR_ID })
-      });
-      const data = await res.json();
-
-      if (!res.ok || !data.ok) {
-        if (data.error === "wait") {
-          btn.textContent = "⏳ " + formatWait(data.waitMs);
-          return;
-        }
-        if (data.error === "not_allowed") {
-          alert("لا تملك صلاحية هذه النقطة.");
-          btn.textContent = original;
-          btn.disabled = false;
-          return;
-        }
-        throw new Error(data.error || "fail");
-      }
-
-      await fetchAds();
-    } catch (err) {
-      btn.textContent = original;
-      btn.disabled = false;
-      alert("تعذر إضافة النقطة.");
-    }
-  }
-
-  function renderFeaturedCard(item) {
-    const badge = item.badge
-      ? `<div class="featured-badge">${esc(item.badge)}</div>`
-      : '';
-    const link = item.link || item.telegram || '';
-    const hasLink = /^https?:\/\//i.test(link);
-    return `
-      <div class="featured">
-        ${badge}
-        <div class="featured-entity">◆ ${esc(item.entity || '')}</div>
-        <div class="featured-desc">${esc(item.description || '')}</div>
-        ${hasLink ? `<a class="featured-tg" href="${esc(link)}" target="_blank" rel="noopener">فتح الرابط →</a>` : ''}
-      </div>
-    `;
-  }
-
-  async function loadFeatured() {
-    try {
-      const res = await fetch('/featured.json?v=' + Date.now());
-      if (!res.ok) return;
-      const list = await res.json();
-
-      if (!Array.isArray(list) || list.length === 0) return;
-
-      const half = Math.ceil(list.length / 2);
-      const leftItems = list.slice(0, half);
-      const rightItems = list.slice(half);
-
-      document.getElementById("sidebarLeft").innerHTML =
-        leftItems.map(renderFeaturedCard).join("");
-      document.getElementById("sidebarRight").innerHTML =
-        rightItems.map(renderFeaturedCard).join("");
-
-      document.getElementById("featuredList").innerHTML =
-        list.map(renderFeaturedCard).join("");
-      document.getElementById("featuredWrap").style.display = "block";
-    } catch (e) {}
-  }
-
-  async function loadTicker() {
-    try {
-      const res = await fetch('/ticker.json?v=' + Date.now());
-      if (!res.ok) return;
-      const data = await res.json();
-
-      if (!data || !data.enabled || !data.text) return;
-
-      const $bar = document.getElementById("tickerBar");
-      const $text = document.getElementById("tickerText");
-      const $fallback = document.getElementById("fallbackMarquee");
-
-      $text.textContent = data.text;
-      $bar.href = data.telegram || "#";
-
-      $bar.style.display = "flex";
-      $fallback.style.display = "none";
-    } catch (e) {}
-  }
-
-  fetchAds();
-  loadFeatured();
-  loadTicker();
-
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('/service-worker.js').catch(() => {});
-    });
-  }
-</script>
-
+    // تحميل الإعلانات فور فتح الصفحة
+    loadAds();
+  </script>
 </body>
 </html>
