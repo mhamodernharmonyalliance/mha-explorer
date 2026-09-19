@@ -20,7 +20,11 @@ async function getToken(env) {
       returnSecureToken: true
     })
   });
-  if (!res.ok) throw new Error("signin_failed");
+  if (!res.ok) {
+    const errText = await res.text();
+    console.error("Sign-in failed:", errText);
+    throw new Error("signin_failed");
+  }
   const data = await res.json();
   tokenCache.token = data.idToken;
   tokenCache.expiry = now + (parseInt(data.expiresIn, 10) - 60) * 1000;
@@ -53,7 +57,6 @@ async function handlePublish(request, env) {
     if (entity.length > MAX_ENTITY || description.length > MAX_DESC) {
       return jsonResponse({ error: "too_long" }, 400);
     }
-
     if (authorId.length > 64 || deleteKey.length > 64) {
       return jsonResponse({ error: "invalid_meta" }, 400);
     }
@@ -64,7 +67,7 @@ async function handlePublish(request, env) {
     const adsRes = await fetch(`${FIREBASE_DB}/ads.json?auth=${token}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ entity, description, authorId, createdAt: now })
+      body: JSON.stringify({ entity, description, authorId, createdAt: now, points: 0, lastBoostAt: 0 })
     });
     if (!adsRes.ok) throw new Error("ads_write_failed");
     const adsData = await adsRes.json();
@@ -82,7 +85,8 @@ async function handlePublish(request, env) {
 
     return jsonResponse({ ok: true, id });
   } catch (e) {
-    return jsonResponse({ error: "server_error" }, 500);
+    console.error("Publish error:", e.message);
+    return jsonResponse({ error: "server_error", details: e.message }, 500);
   }
 }
 
@@ -126,7 +130,8 @@ async function handleDelete(request, env) {
 
     return jsonResponse({ ok: true });
   } catch (e) {
-    return jsonResponse({ error: "server_error" }, 500);
+    console.error("Delete error:", e.message);
+    return jsonResponse({ error: "server_error", details: e.message }, 500);
   }
 }
 
@@ -177,7 +182,8 @@ async function handleBoost(request, env) {
 
     return jsonResponse({ ok: true, points: newPoints, nextBoostAt: now + DAY_MS });
   } catch (e) {
-    return jsonResponse({ error: "server_error" }, 500);
+    console.error("Boost error:", e.message);
+    return jsonResponse({ error: "server_error", details: e.message }, 500);
   }
 }
 
