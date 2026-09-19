@@ -8,7 +8,7 @@
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#0088cc">
 
-  <script src="https://sad.adsgram.ai/js/sad-index.js"></script>
+  <script src="https://sad.adsgram.ai/js/sad-index.js" onerror="console.error('فشل تحميل سكريبت Adsgram!')"></script>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
   <style>
@@ -21,6 +21,7 @@
     .ad-card { background: #1e1e1e; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #333; }
     .ad-card h3 { margin-top: 0; color: #0088cc; }
     .error-msg { color: #ff6b6b; text-align: center; padding: 10px; background: #331111; border-radius: 8px; }
+    .debug-info { font-size: 12px; color: #888; margin-top: 20px; text-align: center; border-top: 1px dashed #333; padding-top: 10px;}
   </style>
 </head>
 <body>
@@ -29,7 +30,6 @@
     <h2>نشر إعلان جديد</h2>
     <input type="text" id="entity" placeholder="عنوان الإعلان / اسم الكيان أو رابط تليجرام" maxlength="80">
     <textarea id="description" placeholder="وصف الإعلان بالتفصيل" rows="4" maxlength="1500"></textarea>
-    <!-- تم توضيح حقل مفتاح الحذف وجعله نصياً لتراه -->
     <input type="text" id="deleteKey" placeholder="اكتب مفتاحاً سرياً للحذف (مثل 1234) واحفظه جيداً!">
     <button id="publishBtn" onclick="publishAd()">نشر (شاهد إعلان لتأكيد النشر) 🎬</button>
 
@@ -37,10 +37,17 @@
 
     <h2>الإعلانات المتاحة</h2>
     <div id="adsList"><p style="text-align:center;">جاري التحميل...</p></div>
+    
+    <div id="debugConsole" class="debug-info"></div>
   </div>
 
   <script>
-    // 1. تحديد هوية المستخدم (تليجرام أو زائر فريد)
+    const debugConsole = document.getElementById('debugConsole');
+    const logDebug = (msg) => {
+        debugConsole.innerHTML += `<div>${msg}</div>`;
+        console.log(msg);
+    };
+
     let authorId;
     const tg = window.Telegram?.WebApp;
     
@@ -48,6 +55,7 @@
         tg.ready();
         tg.expand();
         authorId = String(tg.initDataUnsafe.user.id);
+        logDebug(`✅ تم التعرف على مستخدم تليجرام: ${authorId}`);
     } else {
         let guestId = localStorage.getItem('mha_guest_id');
         if (!guestId) {
@@ -55,19 +63,30 @@
             localStorage.setItem('mha_guest_id', guestId);
         }
         authorId = guestId;
+        logDebug(`⚠️ لم يتم العثور على بيانات تليجرام. تم استخدام معرف زائر: ${authorId}`);
     }
-    console.log("Current User ID:", authorId);
 
-    // 2. تهيئة Adsgram
     let AdController = null;
-    if (window.Adsgram) {
-        AdController = window.Adsgram.init({ blockId: "48760" });
+    function initAdsgram() {
+        if (window.Adsgram) {
+            try {
+                AdController = window.Adsgram.init({ blockId: "48760" }); // الـ ID الخاص بك
+                logDebug("✅ تم تهيئة Adsgram بنجاح.");
+            } catch (e) {
+                logDebug("❌ فشل تهيئة Adsgram: " + e.message);
+            }
+        } else {
+            logDebug("❌ مكتبة Adsgram غير موجودة في الصفحة (window.Adsgram is undefined).");
+            logDebug("💡 تأكد من إيقاف مانع الإعلانات وفتح الرابط من داخل تليجرام.");
+        }
     }
+    
+    setTimeout(initAdsgram, 1500); // ننتظر قليلاً لتحميل السكريبت
 
     async function showAdsgramVideo() {
       if (!AdController) {
-        alert("نظام الإعلانات غير محمل. تأكد من فتح التطبيق داخل تليجرام.");
-        return false;
+        const skip = confirm("⚠️ نظام الإعلانات لا يعمل حالياً (بيئة اختبار).\nهل تريد تخطي الإعلان والمتابعة للاختبار؟");
+        return skip; 
       }
       try {
         const result = await AdController.show();
@@ -80,7 +99,6 @@
       }
     }
 
-    // 3. دالة النشر
     async function publishAd() {
       const entity = document.getElementById("entity").value.trim();
       const description = document.getElementById("description").value.trim();
@@ -129,7 +147,6 @@
       }
     }
 
-    // 4. دالة جمع النقطة (Boost)
     async function boostAd(id) {
       const watched = await showAdsgramVideo();
       if (!watched) return;
@@ -156,7 +173,6 @@
       }
     }
 
-    // 5. دالة حذف الإعلان
     async function deleteAd(id) {
       const deleteKey = prompt("أدخل مفتاح الحذف السري الذي كتبته عند النشر:");
       if (!deleteKey) return;
@@ -180,14 +196,11 @@
       }
     }
 
-    // 6. جلب الإعلانات وعرضها
     async function loadAds() {
       const container = document.getElementById("adsList");
       try {
         const res = await fetch("https://mhaexplorer-ac7a7-default-rtdb.europe-west1.firebasedatabase.app/ads.json");
-        
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
         const data = await res.json();
         container.innerHTML = "";
 
@@ -195,7 +208,6 @@
             container.innerHTML = `<div class="error-msg">خطأ في قاعدة البيانات: ${data.error}</div>`;
             return;
         }
-
         if (!data || Object.keys(data).length === 0) {
           container.innerHTML = "<p style='text-align:center; color:#888;'>لا توجد إعلانات حالياً. كن أول من ينشر!</p>";
           return;
