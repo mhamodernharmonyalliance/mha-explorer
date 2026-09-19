@@ -1,6 +1,6 @@
 name = "mha-explorer"
 main = "worker.js"
-compatibility_date = "2026-09-11"
+compatibility_date = "2024-09-11"
 
 [assets]
 directory = "."
