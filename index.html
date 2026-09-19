@@ -62,10 +62,12 @@
         AdController = window.Adsgram.init({ blockId: "48760" });
     }
 
+    // 3. دالة عرض الإعلان (مع خيار التخطي للاختبار)
     async function showAdsgramVideo() {
       if (!AdController) {
-        alert("نظام الإعلانات غير متاح حالياً. يرجى المحاولة لاحقاً.");
-        return false;
+        // خيار التخطي للاختبار فقط
+        const skip = confirm("⚠️ نظام الإعلانات غير متاح حالياً (بيئة اختبار).\nهل تريد تخطي الإعلان والمتابعة للاختبار؟");
+        return skip; 
       }
       try {
         const result = await AdController.show();
@@ -73,12 +75,13 @@
         return true;
       } catch (error) {
         console.warn("Ad skipped or failed:", error);
-        alert("يجب عليك مشاهدة الإعلان حتى النهاية لإتمام العملية!");
-        return false;
+        // خيار التخطي في حال فشل الإعلان
+        const skip = confirm("⚠️ فشل عرض الإعلان (قد يكون بسبب مانع إعلانات).\nهل تريد تخطي الإعلان والمتابعة للاختبار؟");
+        return skip;
       }
     }
 
-    // 3. دالة النشر
+    // 4. دالة النشر
     async function publishAd() {
       const entity = document.getElementById("entity").value.trim();
       const description = document.getElementById("description").value.trim();
@@ -117,17 +120,17 @@
           document.getElementById("deleteKey").value = "";
           loadAds();
         } else {
-          alert("حدث خطأ أثناء النشر: " + (data.error || "خطأ غير معروف"));
+          alert("حدث خطأ أثناء النشر: " + (data.details || data.error || "خطأ غير معروف"));
         }
       } catch (err) {
-        alert("فشل الاتصال بالسيرفر");
+        alert("فشل الاتصال بالسيرفر: " + err.message);
       } finally {
         btn.disabled = false;
         btn.innerText = "نشر (شاهد إعلان لتأكيد النشر) 🎬";
       }
     }
 
-    // 4. دالة جمع النقطة (Boost)
+    // 5. دالة جمع النقطة (Boost)
     async function boostAd(id) {
       const watched = await showAdsgramVideo();
       if (!watched) return;
@@ -147,14 +150,14 @@
           const hoursLeft = Math.ceil(data.waitMs / (1000 * 60 * 60));
           alert(`يرجى الانتظار ${hoursLeft} ساعة تقريباً للحصول على النقطة القادمة.`);
         } else {
-          alert("خطأ: " + (data.error || "عذراً، لا يمكنك زيادة نقاط هذا الإعلان"));
+          alert("خطأ: " + (data.details || data.error || "عذراً، لا يمكنك زيادة نقاط هذا الإعلان"));
         }
       } catch (err) {
-        alert("فشل الاتصال بالسيرفر");
+        alert("فشل الاتصال بالسيرفر: " + err.message);
       }
     }
 
-    // 5. دالة حذف الإعلان
+    // 6. دالة حذف الإعلان
     async function deleteAd(id) {
       const deleteKey = prompt("أدخل مفتاح الحذف السري الذي كتبته عند النشر:");
       if (!deleteKey) return;
@@ -171,14 +174,14 @@
           alert("تم حذف الإعلان بنجاح");
           loadAds();
         } else {
-          alert("فشل الحذف: " + (data.error || "مفتاح غير صحيح أو خطأ في الصلاحيات"));
+          alert("فشل الحذف: " + (data.details || data.error || "مفتاح غير صحيح أو خطأ في الصلاحيات"));
         }
       } catch (err) {
-        alert("فشل الاتصال بالسيرفر");
+        alert("فشل الاتصال بالسيرفر: " + err.message);
       }
     }
 
-    // 6. جلب الإعلانات وعرضها
+    // 7. جلب الإعلانات وعرضها
     async function loadAds() {
       const container = document.getElementById("adsList");
       try {
