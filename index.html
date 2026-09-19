@@ -5,53 +5,24 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>MHA Explorer</title>
 
+  <!-- ✅ الوسوم المضافة حديثاً لدعم تطبيقات الويب التقدمية (PWA) -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0088cc">
+
   <!-- Adsgram SDK Integration -->
   <script src="https://sad.adsgram.ai/js/sad-index.js"></script>
   <!-- Telegram Web App SDK -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background-color: #121212;
-      color: #ffffff;
-      padding: 20px;
-      margin: 0;
-    }
-    .container {
-      max-width: 600px;
-      margin: 0 auto;
-    }
-    input, textarea, button {
-      width: 100%;
-      padding: 12px;
-      margin-bottom: 12px;
-      border-radius: 8px;
-      border: 1px solid #333;
-      box-sizing: border-box;
-    }
-    input, textarea {
-      background-color: #1e1e1e;
-      color: #fff;
-    }
-    button {
-      background-color: #0088cc;
-      color: white;
-      font-weight: bold;
-      border: none;
-      cursor: pointer;
-    }
-    button:disabled {
-      background-color: #555;
-      cursor: not-allowed;
-    }
-    .ad-card {
-      background: #1e1e1e;
-      padding: 15px;
-      border-radius: 8px;
-      margin-bottom: 15px;
-      border: 1px solid #333;
-    }
+    body { font-family: Arial, sans-serif; background-color: #121212; color: #ffffff; padding: 20px; margin: 0; }
+    .container { max-width: 600px; margin: 0 auto; }
+    input, textarea, button { width: 100%; padding: 12px; margin-bottom: 12px; border-radius: 8px; border: 1px solid #333; box-sizing: border-box; }
+    input, textarea { background-color: #1e1e1e; color: #fff; }
+    button { background-color: #0088cc; color: white; font-weight: bold; border: none; cursor: pointer; }
+    button:disabled { background-color: #555; cursor: not-allowed; }
+    .ad-card { background: #1e1e1e; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #333; }
+    .ad-card h3 { margin-top: 0; }
   </style>
 </head>
 <body>
@@ -66,21 +37,31 @@
     <hr style="border-color: #333; margin: 30px 0;">
 
     <h2>الإعلانات المتاحة</h2>
-    <div id="adsList"></div>
+    <div id="adsList"><p>جاري التحميل...</p></div>
   </div>
 
   <script>
-    // تهيئة Telegram WebApp
+    // 1. تحديد هوية المستخدم (تليجرام أو زائر فريد)
+    let authorId;
     const tg = window.Telegram?.WebApp;
-    if (tg) tg.ready();
+    
+    if (tg && tg.initDataUnsafe?.user?.id) {
+        tg.ready();
+        authorId = String(tg.initDataUnsafe.user.id);
+    } else {
+        // إذا لم يكن في تليجرام، نولد معرف فريد ونحفظه في المتصفح
+        let guestId = localStorage.getItem('mha_guest_id');
+        if (!guestId) {
+            guestId = 'guest_' + Math.random().toString(36).substring(2, 15);
+            localStorage.setItem('mha_guest_id', guestId);
+        }
+        authorId = guestId;
+    }
+    console.log("Current User ID:", authorId);
 
-    // معرف المستخدم المأخوذ من تليجرام أو معرّف عشوائي مؤقت
-    const authorId = tg?.initDataUnsafe?.user?.id ? String(tg.initDataUnsafe.user.id) : "guest_user";
-
-    // تهيئة Adsgram بـ BlockID الخاص بك: 48760
+    // 2. تهيئة Adsgram
     const AdController = window.Adsgram.init({ blockId: "48760" });
 
-    // دالة مساعدة لمشاهدة الإعلان ومطالبة المستخدم بالانتهاء
     async function showAdsgramVideo() {
       try {
         const result = await AdController.show();
@@ -93,7 +74,7 @@
       }
     }
 
-    // 1️⃣ دالة النشر مع شرط مشاهدة الإعلان
+    // 3. دالة النشر
     async function publishAd() {
       const entity = document.getElementById("entity").value.trim();
       const description = document.getElementById("description").value.trim();
@@ -106,13 +87,16 @@
 
       const btn = document.getElementById("publishBtn");
       btn.disabled = true;
+      btn.innerText = "جاري مشاهدة الإعلان...";
 
-      // مشاهدة الإعلان أولاً
       const watched = await showAdsgramVideo();
       if (!watched) {
         btn.disabled = false;
+        btn.innerText = "نشر (شاهد إعلان لتأكيد النشر) 🎬";
         return;
       }
+
+      btn.innerText = "جاري النشر...";
 
       try {
         const response = await fetch("/api/publish", {
@@ -129,18 +113,18 @@
           document.getElementById("deleteKey").value = "";
           loadAds();
         } else {
-          alert("حدث خطأ أثناء النشر: " + (data.error || "خطأ غير معروف"));
+          alert("حدث خطأ أثناء النشر: " + (data.details || data.error || "خطأ غير معروف"));
         }
       } catch (err) {
         alert("فشل الاتصال بالسيرفر");
       } finally {
         btn.disabled = false;
+        btn.innerText = "نشر (شاهد إعلان لتأكيد النشر) 🎬";
       }
     }
 
-    // 2️⃣ دالة جمع النقطة (Boost) مع شرط مشاهدة الإعلان
+    // 4. دالة جمع النقطة (Boost)
     async function boostAd(id) {
-      // مشاهدة الإعلان أولاً قبل رفع النقاط
       const watched = await showAdsgramVideo();
       if (!watched) return;
 
@@ -159,14 +143,14 @@
           const hoursLeft = Math.ceil(data.waitMs / (1000 * 60 * 60));
           alert(`يرجى الانتظار ${hoursLeft} ساعة تقريباً للحصول على النقطة القادمة.`);
         } else {
-          alert("خطأ: " + (data.error || "عذراً، لا يمكنك زيادة نقاط هذا الإعلان"));
+          alert("خطأ: " + (data.details || data.error || "عذراً، لا يمكنك زيادة نقاط هذا الإعلان"));
         }
       } catch (err) {
         alert("فشل الاتصال بالسيرفر");
       }
     }
 
-    // 3️⃣ دالة حذف الإعلان
+    // 5. دالة حذف الإعلان
     async function deleteAd(id) {
       const deleteKey = prompt("أدخل مفتاح الحذف الخاص بالإعلان:");
       if (!deleteKey) return;
@@ -183,14 +167,14 @@
           alert("تم حذف الإعلان بنجاح");
           loadAds();
         } else {
-          alert("فشل الحذف: مفتاح غير صحيح أو خطأ في الصلاحيات");
+          alert("فشل الحذف: " + (data.details || data.error || "مفتاح غير صحيح أو خطأ في الصلاحيات"));
         }
       } catch (err) {
         alert("فشل الاتصال بالسيرفر");
       }
     }
 
-    // جلب الإعلانات وعرضها
+    // 6. جلب الإعلانات وعرضها
     async function loadAds() {
       try {
         const res = await fetch("https://mhaexplorer-ac7a7-default-rtdb.europe-west1.firebasedatabase.app/ads.json");
@@ -203,21 +187,24 @@
           return;
         }
 
-        Object.keys(data).forEach(id => {
-          const ad = data[id];
+        // ترتيب الإعلانات حسب الأحدث
+        const sortedAds = Object.keys(data).map(id => ({ id, ...data[id] })).sort((a, b) => b.createdAt - a.createdAt);
+
+        sortedAds.forEach(ad => {
           const div = document.createElement("div");
           div.className = "ad-card";
           div.innerHTML = `
             <h3>${ad.entity}</h3>
             <p>${ad.description}</p>
             <p><small>النقاط: <strong>${ad.points || 0}</strong></small></p>
-            <button onclick="boostAd('${id}')">جمع نقطة 🚀 (مشاهدة إعلان)</button>
-            ${ad.authorId === authorId ? `<button onclick="deleteAd('${id}')" style="background-color: #d9534f; margin-top: 8px;">حذف الإعلان 🗑️</button>` : ''}
+            <button onclick="boostAd('${ad.id}')">جمع نقطة 🚀 (مشاهدة إعلان)</button>
+            ${ad.authorId === authorId ? `<button onclick="deleteAd('${ad.id}')" style="background-color: #d9534f; margin-top: 8px;">حذف الإعلان 🗑️</button>` : ''}
           `;
           container.appendChild(div);
         });
       } catch (e) {
         console.error("فشل تحميل الإعلانات:", e);
+        document.getElementById("adsList").innerHTML = "<p>حدث خطأ أثناء تحميل الإعلانات.</p>";
       }
     }
 
