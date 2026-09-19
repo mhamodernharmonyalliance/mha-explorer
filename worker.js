@@ -32,7 +32,9 @@ function jsonResponse(data, status = 200) {
     status,
     headers: {
       "Content-Type": "application/json; charset=utf-8",
-      "Access-Control-Allow-Origin": "*"
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type"
     }
   });
 }
@@ -45,7 +47,6 @@ async function handlePublish(request, env) {
     const authorId = (body.authorId || "").toString().trim();
     const deleteKey = (body.deleteKey || "").toString().trim();
 
-    // التعديل الأول: إزالة التحقق من متغير telegram
     if (!entity || !description || !authorId || !deleteKey) {
       return jsonResponse({ error: "missing_fields" }, 400);
     }
@@ -60,7 +61,6 @@ async function handlePublish(request, env) {
     const token = await getToken(env);
     const now = Date.now();
 
-    // التعديل الثاني: إزالة telegram من كائن البيانات المرسلة إلى Firebase
     const adsRes = await fetch(`${FIREBASE_DB}/ads.json?auth=${token}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
