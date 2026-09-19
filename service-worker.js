@@ -1,4 +1,5 @@
-const CACHE = 'mha-v1';
+// تم تغيير الإصدار إلى v2 لإجبار المتصفح على التحديث
+const CACHE = 'mha-v2'; 
 const ASSETS = [
   '/',
   '/index.html',
@@ -30,7 +31,7 @@ self.addEventListener('fetch', (e) => {
     return;
   }
 
-  // لا نخزّن Google Fonts — نتركها للشبكة مع fallback من الكاش لاحقاً
+  // لا نخزّن Google Fonts
   if (url.hostname.includes('fonts.googleapis.com') ||
       url.hostname.includes('fonts.gstatic.com')) {
     return;
