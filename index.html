@@ -3,102 +3,229 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Diagnostic Test</title>
+  <title>MHA Explorer</title>
+
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0088cc">
+
+  <script src="https://sad.adsgram.ai/js/sad-index.js"></script>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
   <style>
-    body { background: #111; color: #fff; font-family: monospace; padding: 20px; line-height: 1.6; }
-    .log-box { background: #222; border: 1px solid #444; padding: 15px; border-radius: 8px; margin-top: 20px; word-break: break-all; }
-    .success { color: #4caf50; font-weight: bold; }
-    .error { color: #ff6b6b; font-weight: bold; }
-    .info { color: #00bcd4; }
+    body { font-family: Arial, sans-serif; background-color: #121212; color: #ffffff; padding: 20px; margin: 0; }
+    .container { max-width: 600px; margin: 0 auto; }
+    input, textarea, button { width: 100%; padding: 12px; margin-bottom: 12px; border-radius: 8px; border: 1px solid #333; box-sizing: border-box; }
+    input, textarea { background-color: #1e1e1e; color: #fff; }
+    button { background-color: #0088cc; color: white; font-weight: bold; border: none; cursor: pointer; }
+    button:disabled { background-color: #555; cursor: not-allowed; }
+    .ad-card { background: #1e1e1e; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #333; }
+    .ad-card h3 { margin-top: 0; color: #0088cc; }
+    .error-msg { color: #ff6b6b; text-align: center; padding: 10px; background: #331111; border-radius: 8px; }
   </style>
 </head>
 <body>
-  <h2>🔍 فحص النظام (Diagnostic)</h2>
-  <div id="log" class="log-box">جاري بدء الفحص...</div>
+
+  <div class="container">
+    <h2>نشر إعلان جديد</h2>
+    <input type="text" id="entity" placeholder="عنوان الإعلان / اسم الكيان أو رابط تليجرام" maxlength="80">
+    <textarea id="description" placeholder="وصف الإعلان بالتفصيل" rows="4" maxlength="1500"></textarea>
+    <!-- تم توضيح حقل مفتاح الحذف وجعله نصياً لتراه -->
+    <input type="text" id="deleteKey" placeholder="اكتب مفتاحاً سرياً للحذف (مثل 1234) واحفظه جيداً!">
+    <button id="publishBtn" onclick="publishAd()">نشر (شاهد إعلان لتأكيد النشر) 🎬</button>
+
+    <hr style="border-color: #333; margin: 30px 0;">
+
+    <h2>الإعلانات المتاحة</h2>
+    <div id="adsList"><p style="text-align:center;">جاري التحميل...</p></div>
+  </div>
 
   <script>
-    const logDiv = document.getElementById('log');
-    const log = (msg, className = '') => {
-      logDiv.innerHTML += `<div class="${className}">${msg}</div>`;
-      console.log(msg);
-    };
-
-    // الخطوة 0: إلغاء الـ Service Worker لتدمير الكاش
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.getRegistrations().then(registrations => {
-        if (registrations.length === 0) {
-           log("0. لا يوجد Service Worker مسجل. جيد.", "info");
-        }
-        for (let registration of registrations) {
-          registration.unregister();
-          log("0. تم إلغاء Service Worker القديم بنجاح! ✅", "success");
-        }
-      });
+    // 1. تحديد هوية المستخدم (تليجرام أو زائر فريد)
+    let authorId;
+    const tg = window.Telegram?.WebApp;
+    
+    if (tg && tg.initDataUnsafe?.user?.id) {
+        tg.ready();
+        tg.expand();
+        authorId = String(tg.initDataUnsafe.user.id);
     } else {
-      log("0. المتصفح لا يدعم Service Worker.", "info");
+        let guestId = localStorage.getItem('mha_guest_id');
+        if (!guestId) {
+            guestId = 'guest_' + Math.random().toString(36).substring(2, 15);
+            localStorage.setItem('mha_guest_id', guestId);
+        }
+        authorId = guestId;
+    }
+    console.log("Current User ID:", authorId);
+
+    // 2. تهيئة Adsgram
+    let AdController = null;
+    if (window.Adsgram) {
+        AdController = window.Adsgram.init({ blockId: "48760" });
     }
 
-    // الخطوة 1: اختبار الاتصال بـ Firebase
-    async function testFirebase() {
-      log("<br>1. جاري اختبار الاتصال بـ Firebase...");
-      const url = "https://mhaexplorer-ac7a7-default-rtdb.europe-west1.firebasedatabase.app/ads.json";
-      
+    async function showAdsgramVideo() {
+      if (!AdController) {
+        alert("نظام الإعلانات غير محمل. تأكد من فتح التطبيق داخل تليجرام.");
+        return false;
+      }
       try {
-        const res = await fetch(url);
-        log(`   حالة الاتصال (HTTP Status): ${res.status}`);
-        
-        const textData = await res.text();
-        log(`   الرد الخام: ${textData.substring(0, 200)}...`); // نطبع أول 200 حرف فقط
-        
-        if (!res.ok) {
-            log("   ❌ فشل الاتصال! قواعد Firebase تمنع القراءة أو الرابط خطأ.", "error");
-        } else if (textData === "null") {
-            log("   ✅ الاتصال ناجح! لكن قاعدة البيانات فارغة (لا توجد إعلانات).", "success");
-        } else if (textData.includes('"error"')) {
-            log("   ❌ Firebase رفض الطلب! (خطأ في الصلاحيات).", "error");
-        } else {
-            log("   ✅ الاتصال ناجح! وهناك بيانات في قاعدة البيانات.", "success");
-        }
-      } catch (e) {
-        log(`   ❌ فشل الاتصال تماماً! السبب: ${e.message}`, "error");
+        const result = await AdController.show();
+        console.log("Ad completed:", result);
+        return true;
+      } catch (error) {
+        console.warn("Ad skipped:", error);
+        alert("يجب عليك مشاهدة الإعلان حتى النهاية لإتمام العملية!");
+        return false;
       }
     }
 
-    // الخطوة 2: اختبار الاتصال بالـ Worker
-    async function testWorker() {
-      log("<br>2. جاري اختبار الاتصال بالـ Worker (API)...");
+    // 3. دالة النشر
+    async function publishAd() {
+      const entity = document.getElementById("entity").value.trim();
+      const description = document.getElementById("description").value.trim();
+      const deleteKey = document.getElementById("deleteKey").value.trim();
+
+      if (!entity || !description || !deleteKey) {
+        alert("يرجى ملء جميع الحقول المطلوبة!");
+        return;
+      }
+
+      const btn = document.getElementById("publishBtn");
+      btn.disabled = true;
+      btn.innerText = "جاري مشاهدة الإعلان...";
+
+      const watched = await showAdsgramVideo();
+      if (!watched) {
+        btn.disabled = false;
+        btn.innerText = "نشر (شاهد إعلان لتأكيد النشر) 🎬";
+        return;
+      }
+
+      btn.innerText = "جاري النشر...";
+
       try {
-        const res = await fetch("/api/publish", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({}) // بيانات فارغة، هدفنا فقط رؤية هل الـ Worker يرد
+        const response = await fetch("/api/publish", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ entity, description, authorId, deleteKey })
         });
-        log(`   حالة الاتصال (HTTP Status): ${res.status}`);
-        const data = await res.json();
-        log(`   رد الـ Worker: ${JSON.stringify(data)}`);
-        
-        if (res.status === 400) {
-            log("   ✅ الـ Worker يعمل! (رفض الطلب لأنه فارغ، وهذا طبيعي).", "success");
+
+        const data = await response.json();
+        if (response.ok && data.ok) {
+          alert("تم نشر الإعلان بنجاح!");
+          document.getElementById("entity").value = "";
+          document.getElementById("description").value = "";
+          document.getElementById("deleteKey").value = "";
+          loadAds();
         } else {
-            log("   ⚠️ الـ Worker رد بشكل غير متوقع. راجع الإعدادات.", "error");
+          alert("حدث خطأ أثناء النشر: " + (data.details || data.error || "خطأ غير معروف"));
         }
-      } catch (e) {
-        log(`   ❌ فشل الاتصال بالـ Worker! السبب: ${e.message}`, "error");
+      } catch (err) {
+        alert("فشل الاتصال بالسيرفر");
+      } finally {
+        btn.disabled = false;
+        btn.innerText = "نشر (شاهد إعلان لتأكيد النشر) 🎬";
       }
     }
 
-    // تشغيل الفحوصات
-    setTimeout(async () => {
-        await testFirebase();
-        await testWorker();
-        log("<br>🏁 انتهى الفحص. يرجى تصوير هذه الشاشة وإرسالها.");
-    }, 1000);
+    // 4. دالة جمع النقطة (Boost)
+    async function boostAd(id) {
+      const watched = await showAdsgramVideo();
+      if (!watched) return;
 
-  </script>
-</body>
-</html>    }
+      try {
+        const response = await fetch("/api/boost", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id, authorId })
+        });
 
-    // تحميل الإعلانات فور فتح الصفحة
+        const data = await response.json();
+        if (response.ok && data.ok) {
+          alert(`تم جمع النقطة بنجاح! النقاط الحالية: ${data.points}`);
+          loadAds();
+        } else if (response.status === 429) {
+          const hoursLeft = Math.ceil(data.waitMs / (1000 * 60 * 60));
+          alert(`يرجى الانتظار ${hoursLeft} ساعة تقريباً للحصول على النقطة القادمة.`);
+        } else {
+          alert("خطأ: " + (data.details || data.error || "عذراً، لا يمكنك زيادة نقاط هذا الإعلان"));
+        }
+      } catch (err) {
+        alert("فشل الاتصال بالسيرفر");
+      }
+    }
+
+    // 5. دالة حذف الإعلان
+    async function deleteAd(id) {
+      const deleteKey = prompt("أدخل مفتاح الحذف السري الذي كتبته عند النشر:");
+      if (!deleteKey) return;
+
+      try {
+        const response = await fetch("/api/delete", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id, authorId, deleteKey })
+        });
+
+        const data = await response.json();
+        if (response.ok && data.ok) {
+          alert("تم حذف الإعلان بنجاح");
+          loadAds();
+        } else {
+          alert("فشل الحذف: " + (data.details || data.error || "مفتاح غير صحيح أو خطأ في الصلاحيات"));
+        }
+      } catch (err) {
+        alert("فشل الاتصال بالسيرفر");
+      }
+    }
+
+    // 6. جلب الإعلانات وعرضها
+    async function loadAds() {
+      const container = document.getElementById("adsList");
+      try {
+        const res = await fetch("https://mhaexplorer-ac7a7-default-rtdb.europe-west1.firebasedatabase.app/ads.json");
+        
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+        const data = await res.json();
+        container.innerHTML = "";
+
+        if (data && data.error) {
+            container.innerHTML = `<div class="error-msg">خطأ في قاعدة البيانات: ${data.error}</div>`;
+            return;
+        }
+
+        if (!data || Object.keys(data).length === 0) {
+          container.innerHTML = "<p style='text-align:center; color:#888;'>لا توجد إعلانات حالياً. كن أول من ينشر!</p>";
+          return;
+        }
+
+        const sortedAds = Object.keys(data).map(id => ({ id, ...data[id] }))
+            .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+
+        sortedAds.forEach(ad => {
+          const div = document.createElement("div");
+          div.className = "ad-card";
+          const entity = ad.entity || "بدون عنوان";
+          const desc = ad.description || "لا يوجد وصف";
+          const points = ad.points || 0;
+          
+          div.innerHTML = `
+            <h3>${entity}</h3>
+            <p>${desc}</p>
+            <p><small>النقاط: <strong style="color: #f1c40f;">${points}</strong></small></p>
+            <button onclick="boostAd('${ad.id}')">جمع نقطة 🚀 (مشاهدة إعلان)</button>
+            ${ad.authorId === authorId ? `<button onclick="deleteAd('${ad.id}')" style="background-color: #d9534f; margin-top: 8px;">حذف الإعلان 🗑️</button>` : ''}
+          `;
+          container.appendChild(div);
+        });
+      } catch (e) {
+        console.error("فشل تحميل الإعلانات:", e);
+        container.innerHTML = `<div class="error-msg">حدث خطأ أثناء تحميل الإعلانات: ${e.message}</div>`;
+      }
+    }
+
     loadAds();
   </script>
 </body>
