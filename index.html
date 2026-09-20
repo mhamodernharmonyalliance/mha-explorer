@@ -182,23 +182,44 @@
       <p>ادفع بنجوم تليجرام لزيادة سرعة القرش الخاص بك</p>
       <button class="btn-action btn-stars" onclick="buyMultiplierStars(2, 125)">⭐ سرعة 2x — 125 نجمة</button>
       <button class="btn-action btn-stars" onclick="buyMultiplierStars(3, 200)">⭐ سرعة 3x — 200 نجمة</button>
-      <button class="btn-action btn-stars" onclick="buyMultiplierStars(4, 300)">⭐ سرعة 4x — 300 نجمة</button>
+      <button class="btn-action btn-stars" onclick="buyMultiplierStars(4, 300)">⭐ سرعة 3x — 300 نجمة</button>
       <button class="btn-action btn-stars" onclick="buyMultiplierStars(5, 500)">⭐ سرعة 5x — 500 نجمة</button>
       <button class="btn-action btn-close" onclick="closeModal('stars-modal')">إلغاء</button>
     </div>
   </div>
 
-  <!-- ✅ سكريبت صغير لدالة فتح نافذة TON -->
-  <script>
-    function openTonModal() {
-      if (typeof tonConnectUI !== 'undefined' && tonConnectUI && tonConnectUI.openModal) {
-        tonConnectUI.openModal();
-      } else {
-        alert('⚠️ نظام المحفظة لم يُحمّل بعد. يرجى الانتظار ثانيتين ثم المحاولة مرة أخرى.');
-      }
-    }
-  </script>
-
   <script src="app.js"></script>
+
+  <!-- ✅ سكريبت تشخيصي + فتح النافذة بشكل صحيح -->
+  <script>
+    window.openTonModal = function() {
+      console.log('🔵 زر TON تم الضغط عليه');
+      
+      // التحقق من الحالة الحالية
+      let status = '🔍 تشخيص حالة TON Connect:\n\n';
+      status += '1. window.tonConnectUI موجود: ' + (window.tonConnectUI ? '✅' : '❌') + '\n';
+      status += '2. النوع: ' + (window.tonConnectUI ? typeof window.tonConnectUI : 'undefined') + '\n';
+      status += '3. openModal موجود: ' + (window.tonConnectUI && window.tonConnectUI.openModal ? '✅' : '❌') + '\n';
+      status += '4. SDK TON_CONNECT_UI: ' + (typeof TON_CONNECT_UI !== 'undefined' ? '✅' : '❌') + '\n';
+      status += '5. Telegram WebApp: ' + (window.Telegram && window.Telegram.WebApp ? '✅' : '❌') + '\n';
+      status += '6. initData: ' + (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData ? '✅' : '❌ (يجب فتح التطبيق من تليجرام!)') + '\n';
+      
+      // محاولة الفتح
+      if (window.tonConnectUI && window.tonConnectUI.openModal) {
+        try {
+          window.tonConnectUI.openModal();
+          console.log('✅ تم استدعاء openModal بنجاح');
+          status += '\n✅ تم استدعاء openModal! يجب أن تظهر النافذة الآن.';
+        } catch (e) {
+          console.error('❌ خطأ في openModal:', e);
+          status += '\n❌ خطأ: ' + e.message;
+        }
+      } else {
+        status += '\n❌ tonConnectUI غير جاهز. انتظر 3 ثوانٍ.';
+      }
+      
+      alert(status);
+    };
+  </script>
 </body>
 </html>
