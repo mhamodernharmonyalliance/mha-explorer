@@ -6,7 +6,6 @@
   <title>MHASpace | أعماق المحيط 🦈</title>
 
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@tonconnect/ui@2.0.9/dist/tonconnect-ui.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
@@ -44,50 +43,13 @@
     #btn-down { grid-column: 2; grid-row: 2; }
     #btn-right { grid-column: 3; grid-row: 2; }
 
-    #bottom-bar { position: fixed; bottom: 0; left: 0; right: 0; height: 85px; background: rgba(2,6,23,0.95); backdrop-filter: blur(20px); border-top: 1px solid rgba(56,189,248,0.3); display: flex; justify-content: space-around; align-items: center; padding: 0 10px; z-index: 100; box-shadow: 0 -8px 32px rgba(0,0,0,0.5); }
-    .bottom-btn { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; background: linear-gradient(135deg, rgba(2,132,199,0.25), rgba(56,189,248,0.15)); border: 1px solid rgba(56,189,248,0.4); border-radius: 14px; margin: 0 5px; padding: 8px 4px; color: #38bdf8; cursor: pointer; position: relative; overflow: hidden; min-height: 65px; }
-    .bottom-btn:active { transform: scale(0.96); }
-    .bottom-btn:disabled { opacity: 0.5; }
-    .bottom-btn.speed { background: linear-gradient(135deg, rgba(2,132,199,0.35), rgba(56,189,248,0.2)); }
-    .bottom-btn.stars { background: linear-gradient(135deg, rgba(234,179,8,0.25), rgba(202,138,4,0.15)); border-color: rgba(234,179,8,0.4); color: #facc15; }
-    .bottom-btn.ad { background: linear-gradient(135deg, rgba(16,185,129,0.25), rgba(5,150,105,0.15)); border-color: rgba(16,185,129,0.4); color: #34d399; }
-    .btn-icon { font-size: 22px; line-height: 1; }
-    .btn-label { font-size: 11px; font-weight: bold; }
-    .btn-sublabel { font-size: 9px; opacity: 0.7; }
-    .ad-cooldown { position: absolute; top: 4px; left: 4px; background: rgba(0,0,0,0.6); color: #fff; font-size: 9px; padding: 1px 5px; border-radius: 8px; font-weight: bold; }
+    #bottom-bar { position: fixed; bottom: 0; left: 0; right: 0; height: 85px; background: rgba(2,6,23,0.95); backdrop-filter: blur(20px); border-top: 1px solid rgba(56,189,248,0.3); display: flex; justify-content: center; align-items: center; padding: 0 15px; z-index: 100; box-shadow: 0 -8px 32px rgba(0,0,0,0.5); }
+    .ad-btn { width: 100%; max-width: 400px; display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 10px; background: linear-gradient(135deg, #10b981, #059669); border: none; border-radius: 14px; padding: 15px 20px; color: #fff; font-weight: bold; font-size: 15px; cursor: pointer; box-shadow: 0 4px 15px rgba(16,185,129,0.4); position: relative; }
+    .ad-btn:active { transform: scale(0.97); }
+    .ad-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .ad-btn .icon { font-size: 24px; }
+    .ad-cooldown { position: absolute; top: 4px; right: 8px; background: rgba(0,0,0,0.5); color: #fff; font-size: 10px; padding: 2px 8px; border-radius: 8px; font-weight: bold; }
 
-    /* ✅ زر ربط المحفظة اليدوي */
-    .ton-connect-button {
-      width: 100%;
-      padding: 12px;
-      background: linear-gradient(135deg, #0284c7, #38bdf8);
-      color: #fff;
-      border: none;
-      border-radius: 12px;
-      font-weight: bold;
-      font-size: 14px;
-      cursor: pointer;
-      margin-top: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-      box-shadow: 0 4px 15px rgba(56,189,248,0.3);
-    }
-    .ton-connect-button:active { transform: scale(0.97); }
-    .ton-connect-button.connected {
-      background: linear-gradient(135deg, #10b981, #059669);
-    }
-    .ton-connect-button:disabled { opacity: 0.5; cursor: wait; }
-
-    .modal-overlay { position: fixed; inset: 0; background: rgba(3,7,18,0.85); backdrop-filter: blur(8px); z-index: 200; display: flex; justify-content: center; align-items: center; padding: 20px; }
-    .modal-card { background: #0f172a; border: 1px solid rgba(56,189,248,0.3); border-radius: 20px; padding: 22px; width: 100%; max-width: 380px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.5); max-height: 90vh; overflow-y: auto; }
-    .modal-card h2 { color: #38bdf8; margin-bottom: 10px; font-size: 18px; }
-    .modal-card p { color: #94a3b8; font-size: 13px; margin-bottom: 16px; line-height: 1.5; }
-    .btn-action { background: linear-gradient(135deg, #0284c7, #38bdf8); color: #fff; border: none; padding: 12px 16px; border-radius: 12px; font-weight: bold; width: 100%; cursor: pointer; margin-top: 8px; font-size: 13px; }
-    .btn-action:active { transform: scale(0.97); }
-    .btn-stars { background: linear-gradient(135deg, #eab308, #ca8a04); }
-    .btn-close { background: transparent; border: 1px solid #64748b; color: #94a3b8; margin-top: 16px; }
     .floating-text { position: absolute; color: #f59e0b; font-weight: bold; font-size: 20px; pointer-events: none; animation: floatUp 0.8s ease-out forwards; z-index: 50; }
     @keyframes floatUp { 0% { opacity: 1; transform: translate(-50%, 0); } 100% { opacity: 0; transform: translate(-50%, -50px); } }
   </style>
@@ -121,13 +83,8 @@
       <div class="progress-bar-bg">
         <div class="progress-bar-fill" id="progress-fill"></div>
       </div>
-      <div style="font-size: 10px; color: #64748b; margin-top: 4px; text-align: left;" id="db-status">جاري التحقق من المحفظة...</div>
+      <div style="font-size: 10px; color: #64748b; margin-top: 4px; text-align: left;" id="db-status">جاري التحميل...</div>
     </div>
-
-    <!-- ✅ زر ربط المحفظة اليدوي (يستبدل الحاوية التلقائية) -->
-    <button class="ton-connect-button" id="main-ton-btn" onclick="openTonModal()">
-      🔗 ربط محفظة TON
-    </button>
   </div>
 
   <div id="controls-container">
@@ -138,88 +95,13 @@
   </div>
 
   <div id="bottom-bar">
-    <button class="bottom-btn speed" onclick="openSpeedModal()">
-      <span class="btn-icon">⚡</span>
-      <span class="btn-label">Speed</span>
-      <span class="btn-sublabel" id="speed-price-hint">من 0.10 TON</span>
-    </button>
-    <button class="bottom-btn stars" onclick="openStarsModal()">
-      <span class="btn-icon">⭐</span>
-      <span class="btn-label">Stars</span>
-      <span class="btn-sublabel" id="stars-price-hint">من 125 ⭐</span>
-    </button>
-    <button class="bottom-btn ad" onclick="watchTimedAd()" id="ad-btn">
-      <span class="btn-icon">📺</span>
-      <span class="btn-label">إعلان موقت</span>
-      <span class="btn-sublabel">2x لمدة 60ث</span>
+    <button class="ad-btn" onclick="watchTimedAd()" id="ad-btn">
+      <span class="icon">📺</span>
+      <span id="ad-btn-text">شاهد إعلان → تعزيز 3x لمدة 90 ثانية</span>
       <span class="ad-cooldown" id="ad-cooldown" style="display:none;">0:00</span>
     </button>
   </div>
 
-  <div class="modal-overlay" id="welcome-modal" style="display: none;">
-    <div class="modal-card">
-      <h2>مرحباً بك في أعماق MHASpace 🦈</h2>
-      <p>قم بربط محفظة TON الخاصة بك لتبدأ رحلة التعدين كـ "سمكة قرش" والحصول على مكافآت الإحالات!</p>
-      <button class="ton-connect-button" onclick="openTonModal()">🔗 ربط محفظة TON</button>
-    </div>
-  </div>
-
-  <div class="modal-overlay" id="speed-modal" style="display: none;">
-    <div class="modal-card">
-      <h2>⚡ ترقية سرعة القرش (TON)</h2>
-      <p>اختر مستوى السرعة الذي تريده لزيادة معدل جمع اللآلئ</p>
-      <button class="btn-action" onclick="buyMultiplier(2, '0.10')">⚡ سرعة 2x — 0.10 TON</button>
-      <button class="btn-action" onclick="buyMultiplier(3, '0.25')">⚡ سرعة 3x — 0.25 TON</button>
-      <button class="btn-action" onclick="buyMultiplier(4, '0.50')">⚡ سرعة 4x — 0.50 TON</button>
-      <button class="btn-action" onclick="buyMultiplier(5, '1.00')">🔥 سرعة 5x — 1.00 TON</button>
-      <button class="btn-action btn-close" onclick="closeModal('speed-modal')">إلغاء</button>
-    </div>
-  </div>
-
-  <div class="modal-overlay" id="stars-modal" style="display: none;">
-    <div class="modal-card">
-      <h2>⭐ ترقية سرعة القرش (نجوم)</h2>
-      <p>ادفع بنجوم تليجرام لزيادة سرعة القرش الخاص بك</p>
-      <button class="btn-action btn-stars" onclick="buyMultiplierStars(2, 125)">⭐ سرعة 2x — 125 نجمة</button>
-      <button class="btn-action btn-stars" onclick="buyMultiplierStars(3, 200)">⭐ سرعة 3x — 200 نجمة</button>
-      <button class="btn-action btn-stars" onclick="buyMultiplierStars(4, 300)">⭐ سرعة 3x — 300 نجمة</button>
-      <button class="btn-action btn-stars" onclick="buyMultiplierStars(5, 500)">⭐ سرعة 5x — 500 نجمة</button>
-      <button class="btn-action btn-close" onclick="closeModal('stars-modal')">إلغاء</button>
-    </div>
-  </div>
-
   <script src="app.js"></script>
-
-  <!-- ✅ سكريبت تشخيصي + فتح النافذة بشكل صحيح -->
-  <script>
-    window.openTonModal = function() {
-      console.log('🔵 زر TON تم الضغط عليه');
-      
-      // التحقق من الحالة الحالية
-      let status = '🔍 تشخيص حالة TON Connect:\n\n';
-      status += '1. window.tonConnectUI موجود: ' + (window.tonConnectUI ? '✅' : '❌') + '\n';
-      status += '2. النوع: ' + (window.tonConnectUI ? typeof window.tonConnectUI : 'undefined') + '\n';
-      status += '3. openModal موجود: ' + (window.tonConnectUI && window.tonConnectUI.openModal ? '✅' : '❌') + '\n';
-      status += '4. SDK TON_CONNECT_UI: ' + (typeof TON_CONNECT_UI !== 'undefined' ? '✅' : '❌') + '\n';
-      status += '5. Telegram WebApp: ' + (window.Telegram && window.Telegram.WebApp ? '✅' : '❌') + '\n';
-      status += '6. initData: ' + (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData ? '✅' : '❌ (يجب فتح التطبيق من تليجرام!)') + '\n';
-      
-      // محاولة الفتح
-      if (window.tonConnectUI && window.tonConnectUI.openModal) {
-        try {
-          window.tonConnectUI.openModal();
-          console.log('✅ تم استدعاء openModal بنجاح');
-          status += '\n✅ تم استدعاء openModal! يجب أن تظهر النافذة الآن.';
-        } catch (e) {
-          console.error('❌ خطأ في openModal:', e);
-          status += '\n❌ خطأ: ' + e.message;
-        }
-      } else {
-        status += '\n❌ tonConnectUI غير جاهز. انتظر 3 ثوانٍ.';
-      }
-      
-      alert(status);
-    };
-  </script>
 </body>
 </html>
