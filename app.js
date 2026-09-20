@@ -52,10 +52,28 @@ function getReferrerId() {
 }
 
 // ==========================================
-// --- TON Connect (نسخة محسّنة) ---
+// --- TON Connect (Global Scope) ---
 // ==========================================
-let tonConnectUI = null;
-let welcomeTonConnectUI = null;
+window.tonConnectUI = null;
+window.welcomeTonConnectUI = null;
+
+// ✅ دالة فتح نافذة المحفظة (مُعرَّفة في app.js لضمان النطاق)
+window.openTonModal = function() {
+  console.log('🔵 زر TON تم الضغط عليه');
+  console.log('window.tonConnectUI:', window.tonConnectUI);
+  
+  if (window.tonConnectUI && typeof window.tonConnectUI.openModal === 'function') {
+    try {
+      window.tonConnectUI.openModal();
+      console.log('✅ تم استدعاء openModal');
+    } catch (e) {
+      console.error('❌ خطأ في openModal:', e);
+      alert('خطأ: ' + e.message);
+    }
+  } else {
+    alert('⚠️ نظام المحفظة لم يُحمّل بعد. انتظر ثانيتين ثم حاول مجدداً.');
+  }
+};
 
 function initTonConnect() {
   if (typeof TON_CONNECT_UI === 'undefined') {
@@ -64,28 +82,16 @@ function initTonConnect() {
     return;
   }
 
-  // زر TON Connect في الأعلى
+  // زر TON Connect في الأعلى (يستخدم buttonRootId إن وُجد، وإلا نتجاهل)
   try {
-    tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
+    window.tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
       manifestUrl: MANIFEST_URL,
       buttonRootId: 'ton-connect-btn'
     });
-    tonConnectUI.onStatusChange(handleWalletConnect);
-    console.log('✅ TonConnect (أعلى) تم تهيئته بنجاح');
+    window.tonConnectUI.onStatusChange(handleWalletConnect);
+    console.log('✅ TonConnect تم تهيئته بنجاح');
   } catch (e) {
-    console.error('❌ فشل تهيئة TonConnect (أعلى):', e);
-  }
-
-  // زر TON Connect في نافذة الترحيب
-  try {
-    welcomeTonConnectUI = new TON_CONNECT_UI.TonConnectUI({
-      manifestUrl: MANIFEST_URL,
-      buttonRootId: 'welcome-ton-btn'
-    });
-    welcomeTonConnectUI.onStatusChange(handleWalletConnect);
-    console.log('✅ TonConnect (ترحيب) تم تهيئته بنجاح');
-  } catch (e) {
-    console.error('❌ فشل تهيئة TonConnect (ترحيب):', e);
+    console.error('❌ فشل تهيئة TonConnect:', e);
   }
 }
 
@@ -108,6 +114,13 @@ function handleWalletConnect(wallet) {
     const dbStatus = document.getElementById('db-status');
     if (dbStatus) dbStatus.innerText = 'متصل عبر ' + userWalletApp + ' 🔗';
 
+    // تحديث نص الزر إلى "متصل"
+    const mainBtn = document.getElementById('main-ton-btn');
+    if (mainBtn) {
+      mainBtn.innerText = '✅ ' + userWalletApp + ' متصل';
+      mainBtn.classList.add('connected');
+    }
+
     saveTonWalletToFirebase(userWalletAddress, userWalletApp);
     processReferralBonusOnConnect();
   } else {
@@ -117,6 +130,12 @@ function handleWalletConnect(wallet) {
 
     const dbStatus = document.getElementById('db-status');
     if (dbStatus) dbStatus.innerText = "غير متصل بالمحفظة";
+
+    const mainBtn = document.getElementById('main-ton-btn');
+    if (mainBtn) {
+      mainBtn.innerText = '🔗 ربط محفظة TON';
+      mainBtn.classList.remove('connected');
+    }
   }
   saveToFirebase();
 }
@@ -257,7 +276,7 @@ async function buyMultiplier(multi, tonAmount) {
     alert("يرجى ربط محفظة TON أولاً لتأكيد المعاملة!");
     return;
   }
-  if (!tonConnectUI) {
+  if (!window.tonConnectUI) {
     alert("نظام المحفظة غير جاهز. يرجى إعادة فتح التطبيق.");
     return;
   }
@@ -267,7 +286,7 @@ async function buyMultiplier(multi, tonAmount) {
     messages: [{ address: RECEIVER_WALLET, amount: nanoTon.toString() }]
   };
   try {
-    await tonConnectUI.sendTransaction(transaction);
+    await window.tonConnectUI.sendTransaction(transaction);
     multiplier = multi;
     updateUI();
     saveToFirebase();
@@ -314,7 +333,7 @@ async function buyMultiplierStars(multi, starsAmount) {
   }
 }
 
-// --- Timed Ad (Adsgram 2x / 60s) ---
+// --- Timed Ad ---
 async function watchTimedAd() {
   const now = Date.now();
   if (now - lastAdWatchTime < AD_COOLDOWN_MS) {
