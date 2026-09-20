@@ -1,10 +1,8 @@
 /* ==========================================
-   MHASpace - Deep Sea Shark Edition (Final)
-   Firebase: mhaexplorer-ac7a7 (No Auth - Open Rules)
-   TON Connect + Telegram Stars + Adsgram Boost
+   MHASpace - Ad-Only Edition (No TON/Stars)
    ========================================== */
 
-// --- Firebase Setup ---
+// --- Firebase ---
 const firebaseConfig = {
   apiKey: "AIzaSyBJTd25x7MKfcQVzAH7ZNNaAwUjXs_-CoI",
   authDomain: "mhaexplorer-ac7a7.firebaseapp.com",
@@ -17,32 +15,27 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-let userWalletAddress = null;
-let userWalletApp = null;
+// --- State ---
 let score = 0.00;
-let multiplier = 1;
 let tempMultiplier = 1;
 let tempBoostExpiry = 0;
-let isPaused = false;
 let isDataLoaded = false;
 const maxCap = 7500000;
-const RECEIVER_WALLET = "UQAqK_qhqpc_lMlh2SVmaqjbR4XfmkIhPdPVoUukb1aYHTG9";
-const MANIFEST_URL = 'https://mha-explorer.mhaapp.workers.dev/tonconnect-manifest.json';
-const TEMP_BOOST_DURATION_MS = 60 * 1000;
-const AD_COOLDOWN_MS = 5 * 60 * 1000;
+const TEMP_BOOST_DURATION_MS = 90 * 1000;  // 90 ثانية
+const AD_COOLDOWN_MS = 3 * 60 * 1000;      // 3 دقائق
+const AD_BOOST_MULTIPLIER = 3;             // 3x
 let lastAdWatchTime = 0;
 
-// --- Adsgram Init ---
+// --- Adsgram ---
 let AdController = null;
 if (window.Adsgram) {
   AdController = window.Adsgram.init({ blockId: "48760" });
 }
 
-// --- User ID & Referral ---
+// --- User ID ---
 function getUserId() {
   const u = window.Telegram?.WebApp?.initDataUnsafe?.user;
   if (u && u.id) return u.id.toString();
-  if (userWalletAddress) return userWalletAddress;
   return "GUEST_USER";
 }
 
@@ -51,121 +44,44 @@ function getReferrerId() {
   return sp ? sp.toString() : null;
 }
 
-// ==========================================
-// --- TON Connect (Global Scope) ---
-// ==========================================
-window.tonConnectUI = null;
-window.welcomeTonConnectUI = null;
+// --- Firebase Save/Load ---
+function saveToFirebase() {
+  if (!isDataLoaded) return;
+  const userId = getUserId();
+  if (!userId || userId === "GUEST_USER") return;
+  db.ref('players/' + userId).update({
+    score: score,
+    multiplier: 1,
+    lastActive: Date.now()
+  });
+}
 
-// ✅ دالة فتح نافذة المحفظة (مُعرَّفة في app.js لضمان النطاق)
-window.openTonModal = function() {
-  console.log('🔵 زر TON تم الضغط عليه');
-  console.log('window.tonConnectUI:', window.tonConnectUI);
-  
-  if (window.tonConnectUI && typeof window.tonConnectUI.openModal === 'function') {
-    try {
-      window.tonConnectUI.openModal();
-      console.log('✅ تم استدعاء openModal');
-    } catch (e) {
-      console.error('❌ خطأ في openModal:', e);
-      alert('خطأ: ' + e.message);
+function loadUserDataFromFirebase() {
+  const userId = getUserId();
+  db.ref('players/' + userId).once('value').then((snap) => {
+    const data = snap.val();
+    if (data) {
+      score = typeof data.score === 'number' ? data.score : 0.00;
     }
-  } else {
-    alert('⚠️ نظام المحفظة لم يُحمّل بعد. انتظر ثانيتين ثم حاول مجدداً.');
-  }
-};
-
-function initTonConnect() {
-  if (typeof TON_CONNECT_UI === 'undefined') {
-    console.error('TON Connect SDK لم يتم تحميله بعد. إعادة المحاولة...');
-    setTimeout(initTonConnect, 500);
-    return;
-  }
-
-  // زر TON Connect في الأعلى (يستخدم buttonRootId إن وُجد، وإلا نتجاهل)
-  try {
-    window.tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
-      manifestUrl: MANIFEST_URL,
-      buttonRootId: 'ton-connect-btn'
-    });
-    window.tonConnectUI.onStatusChange(handleWalletConnect);
-    console.log('✅ TonConnect تم تهيئته بنجاح');
-  } catch (e) {
-    console.error('❌ فشل تهيئة TonConnect:', e);
-  }
-}
-
-// استدعاء التهيئة عند تحميل الصفحة
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initTonConnect);
-} else {
-  initTonConnect();
-}
-
-// --- معالجة اتصال المحفظة ---
-function handleWalletConnect(wallet) {
-  if (wallet) {
-    userWalletAddress = wallet.account.address;
-    userWalletApp = wallet.device?.appName || 'tonkeeper';
-
-    const wm = document.getElementById('welcome-modal');
-    if (wm) wm.style.display = 'none';
-
+    isDataLoaded = true;
+    const splash = document.getElementById('splash-loader');
+    if (splash) splash.style.display = 'none';
     const dbStatus = document.getElementById('db-status');
-    if (dbStatus) dbStatus.innerText = 'متصل عبر ' + userWalletApp + ' 🔗';
-
-    // تحديث نص الزر إلى "متصل"
-    const mainBtn = document.getElementById('main-ton-btn');
-    if (mainBtn) {
-      mainBtn.innerText = '✅ ' + userWalletApp + ' متصل';
-      mainBtn.classList.add('connected');
-    }
-
-    saveTonWalletToFirebase(userWalletAddress, userWalletApp);
-    processReferralBonusOnConnect();
-  } else {
-    userWalletAddress = null;
-    const wm = document.getElementById('welcome-modal');
-    if (wm) wm.style.display = 'flex';
-
-    const dbStatus = document.getElementById('db-status');
-    if (dbStatus) dbStatus.innerText = "غير متصل بالمحفظة";
-
-    const mainBtn = document.getElementById('main-ton-btn');
-    if (mainBtn) {
-      mainBtn.innerText = '🔗 ربط محفظة TON';
-      mainBtn.classList.remove('connected');
-    }
-  }
-  saveToFirebase();
+    if (dbStatus) dbStatus.innerText = 'متصل ✓';
+    updateUI();
+    checkPendingReferralBonuses(userId);
+    startAdCooldownTicker();
+  }).catch((e) => {
+    console.error(e);
+    isDataLoaded = true;
+    const splash = document.getElementById('splash-loader');
+    if (splash) splash.style.display = 'none';
+  });
 }
+loadUserDataFromFirebase();
 
-// --- حفظ المحفظة في Firebase ---
-async function saveTonWalletToFirebase(address, appName) {
-  const telegramUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
-  const userId = telegramUser ? telegramUser.id.toString() : "GUEST_USER";
-
-  if (!userId || userId === "GUEST_USER") {
-    console.warn('لا يوجد مستخدم لتسجيل المحفظة');
-    return;
-  }
-
-  try {
-    await db.ref('players/' + userId).update({
-      tonWallet: address,
-      walletProvider: appName || 'unknown',
-      isVerified: true,
-      lastVerifiedAt: new Date().toISOString(),
-      lastActive: Date.now()
-    });
-    console.log('✅ تم حفظ المحفظة في Firebase');
-  } catch (error) {
-    console.error('❌ خطأ في حفظ المحفظة:', error);
-  }
-}
-
-// --- Referral Logic ---
-function processReferralBonusOnConnect() {
+// --- Referral ---
+function processReferralBonus() {
   const currentUserId = getUserId();
   const referrerId = getReferrerId();
   if (!referrerId || referrerId === currentUserId) return;
@@ -189,48 +105,13 @@ function checkPendingReferralBonuses(userId) {
       bonusRef.remove();
       updateUI();
       saveToFirebase();
-      alert('🎁 مفاجأة من الأعماق! لقد حصلت على ' + amount.toLocaleString() + ' MHA مقابل إحالة ناجحة!');
+      alert('🎁 مفاجأة! حصلت على ' + amount + ' MHA مقابل إحالة ناجحة!');
     }
   });
 }
 
-// --- Firebase Save/Load ---
-function saveToFirebase() {
-  if (!isDataLoaded) return;
-  const userId = getUserId();
-  if (!userId || userId === "GUEST_USER") return;
-  db.ref('players/' + userId).update({
-    tonWallet: userWalletAddress || "",
-    walletProvider: userWalletApp || "unknown",
-    tonVerified: !!userWalletAddress,
-    score: score,
-    multiplier: multiplier,
-    lastActive: Date.now()
-  });
-}
-
-function loadUserDataFromFirebase() {
-  const userId = getUserId();
-  db.ref('players/' + userId).once('value').then((snap) => {
-    const data = snap.val();
-    if (data) {
-      score = typeof data.score === 'number' ? data.score : 0.00;
-      multiplier = data.multiplier || 1;
-    }
-    isDataLoaded = true;
-    const splash = document.getElementById('splash-loader');
-    if (splash) splash.style.display = 'none';
-    updateUI();
-    checkPendingReferralBonuses(userId);
-    startAdCooldownTicker();
-  }).catch((e) => {
-    console.error(e);
-    isDataLoaded = true;
-    const splash = document.getElementById('splash-loader');
-    if (splash) splash.style.display = 'none';
-  });
-}
-loadUserDataFromFirebase();
+// معالجة الإحالة عند التحميل
+setTimeout(processReferralBonus, 1500);
 
 // --- UI Update ---
 function updateUI() {
@@ -246,7 +127,7 @@ function updateUI() {
       rankEl.innerText = `🔥 ${tempMultiplier}x (${secsLeft}ث)`;
     } else {
       rankEl.classList.remove('temp-boost');
-      rankEl.innerText = 'مستوى القرش (' + multiplier + 'x)';
+      rankEl.innerText = 'مستوى القرش (1x)';
     }
   }
 
@@ -257,80 +138,11 @@ function updateUI() {
   if (progFill) progFill.style.width = Math.max(1, percentage) + '%';
 }
 
-// --- Modal Helpers ---
-function openSpeedModal() { document.getElementById('speed-modal').style.display = 'flex'; }
-function openStarsModal() { document.getElementById('stars-modal').style.display = 'flex'; }
-function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-
+// --- Effective Multiplier ---
 function getEffectiveMultiplier() {
   const now = Date.now();
-  if (tempMultiplier > 1 && now < tempBoostExpiry) {
-    return multiplier * tempMultiplier;
-  }
-  return multiplier;
-}
-
-// --- TON Purchase ---
-async function buyMultiplier(multi, tonAmount) {
-  if (!userWalletAddress) {
-    alert("يرجى ربط محفظة TON أولاً لتأكيد المعاملة!");
-    return;
-  }
-  if (!window.tonConnectUI) {
-    alert("نظام المحفظة غير جاهز. يرجى إعادة فتح التطبيق.");
-    return;
-  }
-  const nanoTon = Math.floor(parseFloat(tonAmount) * 1000000000);
-  const transaction = {
-    validUntil: Math.floor(Date.now() / 1000) + 60,
-    messages: [{ address: RECEIVER_WALLET, amount: nanoTon.toString() }]
-  };
-  try {
-    await window.tonConnectUI.sendTransaction(transaction);
-    multiplier = multi;
-    updateUI();
-    saveToFirebase();
-    closeModal('speed-modal');
-    alert('✅ تم تفعيل سرعة القرش ' + multi + 'x بنجاح عبر TON! 🦈');
-  } catch (e) {
-    console.error(e);
-    alert("تم إلغاء المعاملة أو فشلت.");
-  }
-}
-
-// --- Stars Purchase ---
-async function buyMultiplierStars(multi, starsAmount) {
-  const tg = window.Telegram?.WebApp;
-  if (!tg) {
-    alert("هذه الميزة تعمل فقط داخل تطبيق تليجرام!");
-    return;
-  }
-  try {
-    const userId = getUserId();
-    const response = await fetch(`/create-stars-invoice?userId=${userId}&multi=${multi}&stars=${starsAmount}`);
-    if (!response.ok) throw new Error("failed_fetch");
-    const data = await response.json();
-    if (data && data.invoiceLink) {
-      tg.openInvoice(data.invoiceLink, (status) => {
-        if (status === 'paid') {
-          multiplier = multi;
-          updateUI();
-          saveToFirebase();
-          closeModal('stars-modal');
-          alert('⭐ تم تفعيل سرعة القرش ' + multi + 'x بنجاح! 🦈');
-        } else if (status === 'cancelled') {
-          alert('تم إلغاء عملية الدفع.');
-        } else {
-          alert('فشل عملية الدفع. يرجى المحاولة مرة أخرى.');
-        }
-      });
-    } else {
-      alert("خدمة الدفع بالنجوم غير متاحة حالياً. يرجى استخدام TON.");
-    }
-  } catch (e) {
-    console.error(e);
-    alert("حدث خطأ أثناء الاتصال بخادم الدفع.");
-  }
+  if (tempMultiplier > 1 && now < tempBoostExpiry) return tempMultiplier;
+  return 1;
 }
 
 // --- Timed Ad ---
@@ -340,32 +152,34 @@ async function watchTimedAd() {
     const remaining = AD_COOLDOWN_MS - (now - lastAdWatchTime);
     const mins = Math.floor(remaining / 60000);
     const secs = Math.floor((remaining % 60000) / 1000);
-    alert(`⏳ يرجى الانتظار ${mins}:${secs.toString().padStart(2, '0')} قبل مشاهدة إعلان جديد.`);
+    alert(`⏳ انتظر ${mins}:${secs.toString().padStart(2, '0')} قبل إعلان جديد.`);
     return;
   }
   if (!AdController) {
-    alert("⚠️ نظام الإعلانات غير متاح حالياً. حاول لاحقاً.");
+    alert("⚠️ نظام الإعلانات غير متاح حالياً.");
     return;
   }
+  const btn = document.getElementById('ad-btn');
+  if (btn) btn.disabled = true;
+
   try {
-    const btn = document.getElementById('ad-btn');
-    if (btn) btn.disabled = true;
     await AdController.show();
     lastAdWatchTime = Date.now();
-    tempMultiplier = 2;
+    tempMultiplier = AD_BOOST_MULTIPLIER;
     tempBoostExpiry = Date.now() + TEMP_BOOST_DURATION_MS;
     updateUI();
-    alert('🎬 تم تفعيل تعزيز مؤقت 2x لمدة 60 ثانية! 🦈');
+    alert(`🎬 تعزيز ${AD_BOOST_MULTIPLIER}x فعال لمدة 90 ثانية! 🦈`);
+
     setTimeout(() => {
       tempMultiplier = 1;
       tempBoostExpiry = 0;
       updateUI();
     }, TEMP_BOOST_DURATION_MS);
+
     if (btn) btn.disabled = false;
   } catch (e) {
     console.warn("Ad skipped:", e);
-    alert("يجب عليك مشاهدة الإعلان حتى النهاية للحصول على التعزيز!");
-    const btn = document.getElementById('ad-btn');
+    alert("يجب مشاهدة الإعلان حتى النهاية!");
     if (btn) btn.disabled = false;
   }
 }
@@ -391,7 +205,7 @@ function startAdCooldownTicker() {
 }
 
 // ==========================================
-// --- Three.js Engine ---
+// --- Three.js Engine (Deep Sea Shark) ---
 // ==========================================
 const container = document.getElementById('canvas-container');
 const scene = new THREE.Scene();
@@ -458,8 +272,8 @@ function spawnTreasure(isBoss = false) {
   scene.add(mesh);
   treasures.push(mesh);
 }
-setInterval(() => { if (!isPaused) spawnTreasure(false); }, 800);
-setInterval(() => { if (!isPaused) spawnTreasure(true); }, 5000);
+setInterval(() => spawnTreasure(false), 800);
+setInterval(() => spawnTreasure(true), 5000);
 
 // VFX
 const particles = [];
@@ -490,7 +304,6 @@ camera.lookAt(0, 0, 0);
 
 let targetTilt = 0;
 function moveShark(dx, dz) {
-  if (isPaused) return;
   sharkGroup.position.x = Math.max(-8, Math.min(8, sharkGroup.position.x + dx));
   sharkGroup.position.z = Math.max(-2, Math.min(6, sharkGroup.position.z + dz));
   targetTilt = -dx * 0.6;
@@ -527,65 +340,63 @@ window.addEventListener('resize', () => {
 // Animation Loop
 function animate() {
   requestAnimationFrame(animate);
-  if (!isPaused) {
-    grid.position.z += 0.1;
-    if (grid.position.z > 2) grid.position.z = 0;
+  grid.position.z += 0.1;
+  if (grid.position.z > 2) grid.position.z = 0;
 
-    const positions = bubbleField.geometry.attributes.position.array;
-    for (let i = 2; i < bubbleCount * 3; i += 3) {
-      positions[i] += 0.2;
-      if (positions[i] > 10) positions[i] = -90;
-    }
-    bubbleField.geometry.attributes.position.needsUpdate = true;
-
-    sharkGroup.rotation.z += (targetTilt - sharkGroup.rotation.z) * 0.1;
-    targetTilt *= 0.9;
-
-    for (let i = particles.length - 1; i >= 0; i--) {
-      const p = particles[i];
-      p.life -= 0.04;
-      p.system.material.opacity = p.life;
-      const pPos = p.system.geometry.attributes.position.array;
-      for (let j = 0; j < p.velocities.length; j++) {
-        pPos[j * 3] += p.velocities[j].x;
-        pPos[j * 3 + 1] += p.velocities[j].y;
-        pPos[j * 3 + 2] += p.velocities[j].z;
-      }
-      p.system.geometry.attributes.position.needsUpdate = true;
-      if (p.life <= 0) {
-        scene.remove(p.system);
-        particles.splice(i, 1);
-      }
-    }
-
-    for (let i = treasures.length - 1; i >= 0; i--) {
-      const t = treasures[i];
-      t.position.z += t.userData.speed;
-      t.rotation.x += 0.02;
-      t.rotation.y += 0.02;
-      if (t.userData.isBoss) {
-        t.position.y = Math.sin(Date.now() * 0.005 + t.userData.floatOffset) * 0.3;
-      }
-      if (sharkGroup.position.distanceTo(t.position) < 1.2) {
-        const effMult = getEffectiveMultiplier();
-        const reward = t.userData.isBoss ? (1.0 * effMult) : (0.01 * effMult);
-        score = Math.min(maxCap, score + reward);
-        createBubbleBurst(t.position, t.userData.isBoss ? 0xf59e0b : 0x38bdf8);
-        if (t.userData.isBoss) showFloatingText('قضمة! +' + (1.0 * effMult).toFixed(2) + ' MHA 🌟');
-        updateUI();
-        saveToFirebase();
-        scene.remove(t);
-        treasures.splice(i, 1);
-        continue;
-      }
-      if (t.position.z > 8) {
-        scene.remove(t);
-        treasures.splice(i, 1);
-      }
-    }
-
-    if (Date.now() % 1000 < 20) updateUI();
+  const positions = bubbleField.geometry.attributes.position.array;
+  for (let i = 2; i < bubbleCount * 3; i += 3) {
+    positions[i] += 0.2;
+    if (positions[i] > 10) positions[i] = -90;
   }
+  bubbleField.geometry.attributes.position.needsUpdate = true;
+
+  sharkGroup.rotation.z += (targetTilt - sharkGroup.rotation.z) * 0.1;
+  targetTilt *= 0.9;
+
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i];
+    p.life -= 0.04;
+    p.system.material.opacity = p.life;
+    const pPos = p.system.geometry.attributes.position.array;
+    for (let j = 0; j < p.velocities.length; j++) {
+      pPos[j * 3] += p.velocities[j].x;
+      pPos[j * 3 + 1] += p.velocities[j].y;
+      pPos[j * 3 + 2] += p.velocities[j].z;
+    }
+    p.system.geometry.attributes.position.needsUpdate = true;
+    if (p.life <= 0) {
+      scene.remove(p.system);
+      particles.splice(i, 1);
+    }
+  }
+
+  for (let i = treasures.length - 1; i >= 0; i--) {
+    const t = treasures[i];
+    t.position.z += t.userData.speed;
+    t.rotation.x += 0.02;
+    t.rotation.y += 0.02;
+    if (t.userData.isBoss) {
+      t.position.y = Math.sin(Date.now() * 0.005 + t.userData.floatOffset) * 0.3;
+    }
+    if (sharkGroup.position.distanceTo(t.position) < 1.2) {
+      const effMult = getEffectiveMultiplier();
+      const reward = t.userData.isBoss ? (1.0 * effMult) : (0.01 * effMult);
+      score = Math.min(maxCap, score + reward);
+      createBubbleBurst(t.position, t.userData.isBoss ? 0xf59e0b : 0x38bdf8);
+      if (t.userData.isBoss) showFloatingText('قضمة! +' + (1.0 * effMult).toFixed(2) + ' MHA 🌟');
+      updateUI();
+      saveToFirebase();
+      scene.remove(t);
+      treasures.splice(i, 1);
+      continue;
+    }
+    if (t.position.z > 8) {
+      scene.remove(t);
+      treasures.splice(i, 1);
+    }
+  }
+
+  if (Date.now() % 1000 < 20) updateUI();
   renderer.render(scene, camera);
 }
 animate();
