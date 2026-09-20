@@ -1,5 +1,6 @@
 /* ==========================================
-   MHASpace - Ad-Only Edition (No TON/Stars)
+   MHASpace - Ad-Only Edition v2
+   Features: Levels + Dual Ad Networks + Referrals
    ========================================== */
 
 // --- Firebase ---
@@ -20,16 +21,105 @@ let score = 0.00;
 let tempMultiplier = 1;
 let tempBoostExpiry = 0;
 let isDataLoaded = false;
-const maxCap = 7500000;
-const TEMP_BOOST_DURATION_MS = 90 * 1000;  // 90 ثانية
-const AD_COOLDOWN_MS = 3 * 60 * 1000;      // 3 دقائق
-const AD_BOOST_MULTIPLIER = 3;             // 3x
+const TEMP_BOOST_DURATION_MS = 90 * 1000;
+const AD_COOLDOWN_MS = 3 * 60 * 1000;
+const AD_BOOST_MULTIPLIER = 3;
+const LEVEL_STEP = 100000; // كل 100 ألف = مستوى جديد
+const REFERRAL_BONUS = 100; // 100 MHA لكل إحالة
 let lastAdWatchTime = 0;
 
-// --- Adsgram ---
+// --- Level Definitions ---
+const LEVELS = [
+  { min: 0,       name: "المستوى 1", icon: "🥉", class: "level-bronze" },
+  { min: 100000,  name: "المستوى 2", icon: "🥈", class: "level-silver" },
+  { min: 200000,  name: "المستوى 3", icon: "🥇", class: "level-gold" },
+  { min: 300000,  name: "المستوى 4", icon: "💚", class: "level-emerald" },
+  { min: 500000,  name: "المستوى 5", icon: "❤️", class: "level-ruby" },
+  { min: 1000000, name: "المستوى 6", icon: "💎", class: "level-diamond" },
+  { min: 2000000, name: "المستوى 7", icon: "👑", class: "level-diamond" },
+  { min: 5000000, name: "المستوى 8", icon: "🏆", class: "level-diamond" }
+];
+
+function getLevel(score) {
+  let current = LEVELS[0];
+  for (let i = 0; i < LEVELS.length; i++) {
+    if (score >= LEVELS[i].min) current = LEVELS[i];
+    else break;
+  }
+  return current;
+}
+
+function getNextLevel(score) {
+  for (let i = 0; i < LEVELS.length; i++) {
+    if (score < LEVELS[i].min) return LEVELS[i];
+  }
+  return null; // وصل لأعلى مستوى
+}
+
+// --- Adsgram Init ---
 let AdController = null;
-if (window.Adsgram) {
-  AdController = window.Adsgram.init({ blockId: "48760" });
+let adsgramReady = false;
+
+function initAdsgram() {
+  if (typeof window.Adsgram === 'undefined') {
+    console.warn('⚠️ Adsgram SDK غير محمّل');
+    return false;
+  }
+  try {
+    AdController = window.Adsgram.init({ blockId: "48760" });
+    adsgramReady = true;
+    console.log('✅ Adsgram جاهز');
+    return true;
+  } catch (e) {
+    console.error('❌ فشل تهيئة Adsgram:', e);
+    return false;
+  }
+}
+setTimeout(initAdsgram, 2000);
+
+// --- Monetag Fallback ---
+function showMonetagAd() {
+  return new Promise((resolve) => {
+    // محاولة استدعاء Monetag SDK إذا كان متاحاً
+    if (typeof window.show_zone === 'function') {
+      try {
+        window.show_zone({ type: 'inApp', inAppSettings: { frequency: 2, capping: 0.1, interval: 30, timeout: 5, everyPage: false } });
+        setTimeout(() => resolve(true), 500);
+      } catch (e) {
+        console.warn('Monetag error:', e);
+        resolve(false);
+      }
+    } else {
+      // إذا لم يوجد API مباشر، نعتبره فشلاً
+      console.warn('Monetag API غير متاح');
+      resolve(false);
+    }
+  });
+}
+
+// --- Unified Ad Watcher (Adsgram → Monetag) ---
+async function showRewardedAd() {
+  // المحاولة 1: Adsgram
+  if (adsgramReady && AdController) {
+    try {
+      console.log('🎬 محاولة Adsgram...');
+      await AdController.show();
+      console.log('✅ Adsgram نجح');
+      return { success: true, network: 'adsgram' };
+    } catch (e) {
+      console.warn('⚠️ Adsgram فشل:', e);
+    }
+  }
+
+  // المحاولة 2: Monetag (احتياطي)
+  console.log('🎬 محاولة Monetag...');
+  const monetagResult = await showMonetagAd();
+  if (monetagResult) {
+    console.log('✅ Monetag نجح');
+    return { success: true, network: 'monetag' };
+  }
+
+  return { success: false, network: null };
 }
 
 // --- User ID ---
@@ -51,7 +141,6 @@ function saveToFirebase() {
   if (!userId || userId === "GUEST_USER") return;
   db.ref('players/' + userId).update({
     score: score,
-    multiplier: 1,
     lastActive: Date.now()
   });
 }
@@ -88,7 +177,7 @@ function processReferralBonus() {
   const refCheckRef = db.ref('players/' + currentUserId + '/referredByProcessed');
   refCheckRef.once('value').then((snap) => {
     if (!snap.exists() || !snap.val()) {
-      db.ref('players/' + referrerId + '/unclaimedRefBonus').transaction(c => (c || 0) + 100);
+      db.ref('players/' + referrerId + '/unclaimedRefBonus').transaction(c => (c || 0) + REFERRAL_BONUS);
       db.ref('players/' + referrerId + '/successfulRefsCount').transaction(c => (c || 0) + 1);
       refCheckRef.set(true);
       db.ref('players/' + currentUserId + '/referredBy').set(referrerId);
@@ -101,7 +190,7 @@ function checkPendingReferralBonuses(userId) {
   bonusRef.once('value').then((snap) => {
     const amount = snap.val();
     if (amount && amount > 0) {
-      score = Math.min(maxCap, score + amount);
+      score = score + amount;
       bonusRef.remove();
       updateUI();
       saveToFirebase();
@@ -109,8 +198,6 @@ function checkPendingReferralBonuses(userId) {
     }
   });
 }
-
-// معالجة الإحالة عند التحميل
 setTimeout(processReferralBonus, 1500);
 
 // --- UI Update ---
@@ -118,24 +205,50 @@ function updateUI() {
   const scoreEl = document.getElementById('score-val');
   if (scoreEl) scoreEl.innerText = score.toFixed(2);
 
+  // 🏅 شارة المستوى
+  const level = getLevel(score);
+  const levelBadge = document.getElementById('level-badge');
+  const levelText = document.getElementById('level-text');
+  if (levelBadge && levelText) {
+    // إزالة كلاسات المستوى القديمة
+    levelBadge.className = 'level-badge';
+    levelBadge.classList.add(level.class);
+    levelText.innerText = level.name;
+    levelBadge.querySelector('.icon').innerText = level.icon;
+  }
+
+  // شريط التقدم للمستوى القادم
+  const nextLevel = getNextLevel(score);
+  const progressFill = document.getElementById('level-progress-fill');
+  const progressText = document.getElementById('level-progress-text');
+  
+  if (nextLevel && progressFill && progressText) {
+    const prevMin = level.min;
+    const range = nextLevel.min - prevMin;
+    const progress = score - prevMin;
+    const percentage = Math.min(100, (progress / range) * 100);
+    progressFill.style.width = percentage + '%';
+    progressText.innerText = Math.floor(progress).toLocaleString();
+  } else if (progressFill && progressText) {
+    // وصل لأعلى مستوى
+    progressFill.style.width = '100%';
+    progressText.innerText = 'أعلى مستوى!';
+  }
+
+  // شارة المضاعف المؤقت
   const rankEl = document.getElementById('rank-badge');
   if (rankEl) {
     const now = Date.now();
     if (tempMultiplier > 1 && now < tempBoostExpiry) {
       const secsLeft = Math.ceil((tempBoostExpiry - now) / 1000);
+      rankEl.style.display = 'inline-block';
       rankEl.classList.add('temp-boost');
       rankEl.innerText = `🔥 ${tempMultiplier}x (${secsLeft}ث)`;
     } else {
       rankEl.classList.remove('temp-boost');
-      rankEl.innerText = 'مستوى القرش (1x)';
+      rankEl.style.display = 'none';
     }
   }
-
-  const percentage = Math.min(100, (score / maxCap) * 100).toFixed(4);
-  const progText = document.getElementById('progress-text');
-  if (progText) progText.innerText = percentage;
-  const progFill = document.getElementById('progress-fill');
-  if (progFill) progFill.style.width = Math.max(1, percentage) + '%';
 }
 
 // --- Effective Multiplier ---
@@ -145,7 +258,7 @@ function getEffectiveMultiplier() {
   return 1;
 }
 
-// --- Timed Ad ---
+// --- Timed Ad (Dual Network) ---
 async function watchTimedAd() {
   const now = Date.now();
   if (now - lastAdWatchTime < AD_COOLDOWN_MS) {
@@ -155,31 +268,32 @@ async function watchTimedAd() {
     alert(`⏳ انتظر ${mins}:${secs.toString().padStart(2, '0')} قبل إعلان جديد.`);
     return;
   }
-  if (!AdController) {
-    alert("⚠️ نظام الإعلانات غير متاح حالياً.");
-    return;
-  }
+
   const btn = document.getElementById('ad-btn');
   if (btn) btn.disabled = true;
 
   try {
-    await AdController.show();
-    lastAdWatchTime = Date.now();
-    tempMultiplier = AD_BOOST_MULTIPLIER;
-    tempBoostExpiry = Date.now() + TEMP_BOOST_DURATION_MS;
-    updateUI();
-    alert(`🎬 تعزيز ${AD_BOOST_MULTIPLIER}x فعال لمدة 90 ثانية! 🦈`);
+    const result = await showRewardedAd();
 
-    setTimeout(() => {
-      tempMultiplier = 1;
-      tempBoostExpiry = 0;
+    if (result.success) {
+      lastAdWatchTime = Date.now();
+      tempMultiplier = AD_BOOST_MULTIPLIER;
+      tempBoostExpiry = Date.now() + TEMP_BOOST_DURATION_MS;
       updateUI();
-    }, TEMP_BOOST_DURATION_MS);
+      alert(`🎬 تعزيز ${AD_BOOST_MULTIPLIER}x فعال لمدة 90 ثانية! 🦈\n(الشبكة: ${result.network})`);
 
-    if (btn) btn.disabled = false;
+      setTimeout(() => {
+        tempMultiplier = 1;
+        tempBoostExpiry = 0;
+        updateUI();
+      }, TEMP_BOOST_DURATION_MS);
+    } else {
+      alert("⚠️ لا توجد إعلانات متاحة حالياً.\nجرب لاحقاً أو افتح من شبكة أخرى.");
+    }
   } catch (e) {
-    console.warn("Ad skipped:", e);
-    alert("يجب مشاهدة الإعلان حتى النهاية!");
+    console.warn('Ad error:', e);
+    alert("⚠️ حدث خطأ. جرب مرة أخرى.");
+  } finally {
     if (btn) btn.disabled = false;
   }
 }
@@ -338,6 +452,7 @@ window.addEventListener('resize', () => {
 });
 
 // Animation Loop
+let lastLevel = null;
 function animate() {
   requestAnimationFrame(animate);
   grid.position.z += 0.1;
@@ -381,11 +496,22 @@ function animate() {
     if (sharkGroup.position.distanceTo(t.position) < 1.2) {
       const effMult = getEffectiveMultiplier();
       const reward = t.userData.isBoss ? (1.0 * effMult) : (0.01 * effMult);
-      score = Math.min(maxCap, score + reward);
+      score = score + reward; // ✅ بدون maxCap
       createBubbleBurst(t.position, t.userData.isBoss ? 0xf59e0b : 0x38bdf8);
       if (t.userData.isBoss) showFloatingText('قضمة! +' + (1.0 * effMult).toFixed(2) + ' MHA 🌟');
       updateUI();
       saveToFirebase();
+      
+      // 🔔 كشف ترقية المستوى
+      const newLevel = getLevel(score);
+      if (lastLevel && newLevel.min > lastLevel.min) {
+        showFloatingText('🎉 ' + newLevel.icon + ' ' + newLevel.name + '!');
+        if (window.Telegram?.WebApp?.HapticFeedback) {
+          window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
+        }
+      }
+      lastLevel = newLevel;
+      
       scene.remove(t);
       treasures.splice(i, 1);
       continue;
