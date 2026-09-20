@@ -51,36 +51,99 @@ function getReferrerId() {
   return sp ? sp.toString() : null;
 }
 
-// --- TON Connect ---
-const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
-  manifestUrl: MANIFEST_URL,
-  buttonRootId: 'ton-connect-btn'
-});
-const welcomeTonConnectUI = new TON_CONNECT_UI.TonConnectUI({
-  manifestUrl: MANIFEST_URL,
-  buttonRootId: 'welcome-ton-btn'
-});
+// ==========================================
+// --- TON Connect (نسخة محسّنة) ---
+// ==========================================
+let tonConnectUI = null;
+let welcomeTonConnectUI = null;
 
+function initTonConnect() {
+  if (typeof TON_CONNECT_UI === 'undefined') {
+    console.error('TON Connect SDK لم يتم تحميله بعد. إعادة المحاولة...');
+    setTimeout(initTonConnect, 500);
+    return;
+  }
+
+  // زر TON Connect في الأعلى
+  try {
+    tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
+      manifestUrl: MANIFEST_URL,
+      buttonRootId: 'ton-connect-btn'
+    });
+    tonConnectUI.onStatusChange(handleWalletConnect);
+    console.log('✅ TonConnect (أعلى) تم تهيئته بنجاح');
+  } catch (e) {
+    console.error('❌ فشل تهيئة TonConnect (أعلى):', e);
+  }
+
+  // زر TON Connect في نافذة الترحيب
+  try {
+    welcomeTonConnectUI = new TON_CONNECT_UI.TonConnectUI({
+      manifestUrl: MANIFEST_URL,
+      buttonRootId: 'welcome-ton-btn'
+    });
+    welcomeTonConnectUI.onStatusChange(handleWalletConnect);
+    console.log('✅ TonConnect (ترحيب) تم تهيئته بنجاح');
+  } catch (e) {
+    console.error('❌ فشل تهيئة TonConnect (ترحيب):', e);
+  }
+}
+
+// استدعاء التهيئة عند تحميل الصفحة
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initTonConnect);
+} else {
+  initTonConnect();
+}
+
+// --- معالجة اتصال المحفظة ---
 function handleWalletConnect(wallet) {
   if (wallet) {
     userWalletAddress = wallet.account.address;
     userWalletApp = wallet.device?.appName || 'tonkeeper';
+
     const wm = document.getElementById('welcome-modal');
     if (wm) wm.style.display = 'none';
+
     const dbStatus = document.getElementById('db-status');
     if (dbStatus) dbStatus.innerText = 'متصل عبر ' + userWalletApp + ' 🔗';
+
+    saveTonWalletToFirebase(userWalletAddress, userWalletApp);
     processReferralBonusOnConnect();
   } else {
     userWalletAddress = null;
     const wm = document.getElementById('welcome-modal');
     if (wm) wm.style.display = 'flex';
+
     const dbStatus = document.getElementById('db-status');
     if (dbStatus) dbStatus.innerText = "غير متصل بالمحفظة";
   }
   saveToFirebase();
 }
-tonConnectUI.onStatusChange(handleWalletConnect);
-welcomeTonConnectUI.onStatusChange(handleWalletConnect);
+
+// --- حفظ المحفظة في Firebase ---
+async function saveTonWalletToFirebase(address, appName) {
+  const telegramUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
+  const userId = telegramUser ? telegramUser.id.toString() : "GUEST_USER";
+
+  if (!userId || userId === "GUEST_USER") {
+    console.warn('لا يوجد مستخدم لتسجيل المحفظة');
+    return;
+  }
+
+  try {
+    await db.ref('players/' + userId).update({
+      tonWallet: address,
+      walletProvider: appName || 'unknown',
+      isVerified: true,
+      lastVerifiedAt: new Date().toISOString(),
+      lastActive: Date.now()
+    });
+    console.log('✅ تم حفظ المحفظة في Firebase');
+  } catch (error) {
+    console.error('❌ خطأ في حفظ المحفظة:', error);
+  }
+}
 
 // --- Referral Logic ---
 function processReferralBonusOnConnect() {
@@ -194,6 +257,10 @@ async function buyMultiplier(multi, tonAmount) {
     alert("يرجى ربط محفظة TON أولاً لتأكيد المعاملة!");
     return;
   }
+  if (!tonConnectUI) {
+    alert("نظام المحفظة غير جاهز. يرجى إعادة فتح التطبيق.");
+    return;
+  }
   const nanoTon = Math.floor(parseFloat(tonAmount) * 1000000000);
   const transaction = {
     validUntil: Math.floor(Date.now() / 1000) + 60,
@@ -304,7 +371,9 @@ function startAdCooldownTicker() {
   }, 1000);
 }
 
+// ==========================================
 // --- Three.js Engine ---
+// ==========================================
 const container = document.getElementById('canvas-container');
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x020617);
@@ -325,6 +394,7 @@ const grid = new THREE.GridHelper(100, 50, 0x0284c7, 0x0f172a);
 grid.position.y = -1;
 scene.add(grid);
 
+// فقاعات المحيط
 const bubbleGeo = new THREE.BufferGeometry();
 const bubbleCount = 1000;
 const bubblePositions = new Float32Array(bubbleCount * 3);
@@ -338,6 +408,7 @@ const bubbleMat = new THREE.PointsMaterial({ color: 0x38bdf8, size: 0.15, transp
 const bubbleField = new THREE.Points(bubbleGeo, bubbleMat);
 scene.add(bubbleField);
 
+// 🦈 القرش
 const sharkGroup = new THREE.Group();
 const bodyGeo = new THREE.ConeGeometry(0.6, 2, 8);
 const bodyMat = new THREE.MeshStandardMaterial({ color: 0x64748b, metalness: 0.8, roughness: 0.4 });
@@ -355,6 +426,7 @@ sharkGroup.add(sharkFin);
 sharkGroup.position.set(0, 0, 4);
 scene.add(sharkGroup);
 
+// الكنوز
 const treasures = [];
 function spawnTreasure(isBoss = false) {
   const size = isBoss ? 1.2 : 0.4;
@@ -370,6 +442,7 @@ function spawnTreasure(isBoss = false) {
 setInterval(() => { if (!isPaused) spawnTreasure(false); }, 800);
 setInterval(() => { if (!isPaused) spawnTreasure(true); }, 5000);
 
+// VFX
 const particles = [];
 function createBubbleBurst(position, colorHex) {
   const pCount = 15;
@@ -432,6 +505,7 @@ window.addEventListener('resize', () => {
   renderer.setSize(window.innerWidth, window.innerHeight);
 });
 
+// Animation Loop
 function animate() {
   requestAnimationFrame(animate);
   if (!isPaused) {
