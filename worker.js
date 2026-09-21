@@ -31,6 +31,9 @@ export default {
     }
     if (url.pathname === '/api/products') {
       return jsonResponse({ products: PRODUCTS });
+       if (url.pathname === '/reward' && request.method === 'GET') {
+  return handleReward(request, env);
+       }
     }
     if (url.pathname === '/api/health') {
       return jsonResponse({ ok: true, hasToken: !!env.BOT_TOKEN });
