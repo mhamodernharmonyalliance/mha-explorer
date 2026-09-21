@@ -1,8 +1,8 @@
 /* ==========================================
-   MHA Explorer - Silver Shark Edition v2
-   Firebase + Adsgram + Levels + Pause + Combo
-   + Leaderboard + Daily + Powerups + Biomes
-   + Gift Boxes + Sound + Tutorial + Offline
+   MHASpace v3 - Silver Shark Edition
+   Firebase + Adsgram + Levels + Combo
+   + i18n + Store (Powerups + Boxes) + Daily
+   No Leaderboard (removed)
    ========================================== */
 
 // --- Firebase ---
@@ -27,7 +27,7 @@ const DAILY_REWARD = 50;
 const SAVE_THROTTLE_MS = 5000;
 const COMBO_WINDOW_MS = 2000;
 const POWERUP_DURATION_MS = 30 * 1000;
-const BOT_LINK = 'https://t.me/MHASpaceBot/MHASpace'; // عدّل هذا
+const SHIELD_DURATION_MS = 5 * 60 * 1000;
 
 // --- State ---
 let score = 0.00;
@@ -43,10 +43,14 @@ let saveTimer = null;
 // Combo
 let comboCount = 0;
 let lastCatchTime = 0;
+let shieldExpiry = 0;
 
 // Power-ups
 let magnetExpiry = 0;
 let x2Expiry = 0;
+
+// Inventory (from Firebase)
+let inventory = { magnet: 0, x2: 0, shield: 0 };
 
 // Timers
 let treasureSpawnInterval = null;
@@ -68,26 +72,21 @@ const TUTORIAL_KEY = 'mha_tutorial_done';
   try {
     tg.ready();
     tg.expand();
-    // Sync theme colors
     const bg = tg.themeParams?.bg_color;
     if (bg) document.body.style.background = bg;
-    tg.onEvent?.('themeChanged', () => {
-      const nb = tg.themeParams?.bg_color;
-      if (nb) document.body.style.background = nb;
-    });
   } catch (e) { console.warn('Telegram init:', e); }
 })();
 
 // --- Levels & Biomes ---
 const LEVELS = [
-  { min: 0,       name: "قطرة",   icon: "💧", class: "level-1" },
-  { min: 100000,  name: "جدول",   icon: "🌊", class: "level-2" },
-  { min: 200000,  name: "نهر",    icon: "🏞️", class: "level-3" },
-  { min: 300000,  name: "بحيرة",  icon: "🌅", class: "level-4" },
-  { min: 500000,  name: "بحر",    icon: "🌊", class: "level-5" },
-  { min: 1000000, name: "محيط",   icon: "🐋", class: "level-6" },
-  { min: 2000000, name: "أعماق",  icon: "🦈", class: "level-7" },
-  { min: 5000000, name: "أسطورة", icon: "👑", class: "level-8" }
+  { min: 0,       key: 'levelDrop',   icon: "💧", class: "level-1" },
+  { min: 100000,  key: 'levelStream', icon: "🌊", class: "level-2" },
+  { min: 200000,  key: 'levelRiver',  icon: "🏞️", class: "level-3" },
+  { min: 300000,  key: 'levelLake',   icon: "🌅", class: "level-4" },
+  { min: 500000,  key: 'levelSea',    icon: "🌊", class: "level-5" },
+  { min: 1000000, key: 'levelOcean',  icon: "🐋", class: "level-6" },
+  { min: 2000000, key: 'levelDepths', icon: "🦈", class: "level-7" },
+  { min: 5000000, key: 'levelLegend', icon: "👑", class: "level-8" }
 ];
 
 const BIOMES = {
@@ -151,7 +150,7 @@ function getUserId() {
 function getUserName() {
   const u = window.Telegram?.WebApp?.initDataUnsafe?.user;
   if (u) return (u.first_name || '') + (u.last_name ? ' ' + u.last_name : '');
-  return 'ضيف';
+  return 'Guest';
 }
 function getReferrerId() {
   const sp = window.Telegram?.WebApp?.initDataUnsafe?.start_param;
@@ -175,7 +174,8 @@ async function autoRegisterUser() {
         referredByProcessed: false,
         unclaimedRefBonus: 0,
         successfulRefsCount: 0,
-        lastDailyClaim: 0
+        lastDailyClaim: 0,
+        powerups: { magnet: 0, x2: 0, shield: 0 }
       });
       const referrerId = getReferrerId();
       if (referrerId && referrerId !== userId) {
@@ -205,7 +205,6 @@ function saveToFirebase() {
   const userId = getUserId();
   if (!userId) return;
   lastSaveTime = Date.now();
-  // Offline backup
   try { localStorage.setItem('mha_offline_score', score.toString()); } catch (e) {}
   db.ref('players/' + userId).update({ score, lastActive: Date.now() })
     .catch(e => console.warn('save failed:', e));
@@ -221,6 +220,16 @@ async function loadUserData() {
     if (data) {
       score = typeof data.score === 'number' ? data.score : 0;
       lastDailyClaim = data.lastDailyClaim || 0;
+      // Load inventory
+      if (data.powerups && typeof data.powerups === 'object') {
+        inventory.magnet = data.powerups.magnet || 0;
+        inventory.x2 = data.powerups.x2 || 0;
+        inventory.shield = data.powerups.shield || 0;
+      }
+      // Check last purchase to show reward
+      if (data.lastPurchase && !data.lastPurchase.shown) {
+        showPurchaseReward(data.lastPurchase, userId);
+      }
     } else {
       const cached = parseFloat(localStorage.getItem('mha_offline_score') || '0');
       if (cached > 0) score = cached;
@@ -229,7 +238,7 @@ async function loadUserData() {
     const splash = document.getElementById('splash-loader');
     if (splash) splash.classList.add('hide');
     const status = document.getElementById('db-status');
-    if (status) status.innerText = 'متصل ✓';
+    if (status) status.innerText = t('connected');
     updateUI();
     startAdCooldownTicker();
     checkPendingReferralBonuses(userId);
@@ -243,7 +252,7 @@ async function loadUserData() {
     const splash = document.getElementById('splash-loader');
     if (splash) splash.classList.add('hide');
     const status = document.getElementById('db-status');
-    if (status) status.innerText = 'وضع غير متصل';
+    if (status) status.innerText = t('offline');
     updateUI();
     startAdCooldownTicker();
   }
@@ -259,9 +268,76 @@ function checkPendingReferralBonuses(userId) {
       updateUI();
       saveToFirebase();
       SoundManager.gift();
-      alert('🎁 مفاجأة! حصلت على ' + amount + ' MHA مقابل إحالة ناجحة!');
+      alert(t('refBonus', { n: amount }));
     }
   });
+}
+
+// --- Show Purchase Reward ---
+function showPurchaseReward(purchase, userId) {
+  // Mark as shown
+  db.ref('players/' + userId + '/lastPurchase/shown').set(true);
+
+  let title = '';
+  let bigValue = '';
+  let emoji = '🎁';
+
+  if (purchase.type === 'box') {
+    emoji = '📦';
+    title = t('purchaseBox', { n: purchase.reward });
+    bigValue = '+' + purchase.reward + ' MHA';
+  } else if (purchase.type === 'powerup') {
+    if (purchase.powerupType === 'magnet') {
+      emoji = '🧲';
+      title = (purchase.count > 1) ? t('purchaseMagnet5') : t('purchaseMagnet');
+    } else if (purchase.powerupType === 'x2') {
+      emoji = '⚡';
+      title = t('purchaseX2');
+    } else if (purchase.powerupType === 'shield') {
+      emoji = '🛡️';
+      title = t('purchaseShield');
+    }
+  } else if (purchase.type === 'bundle') {
+    emoji = '🎁';
+    title = t('purchaseMixed');
+  } else if (purchase.type === 'pass') {
+    emoji = '👑';
+    title = t('purchasePass');
+  } else if (purchase.type === 'score') {
+    emoji = '💎';
+    title = t('purchaseBox', { n: purchase.reward });
+    bigValue = '+' + purchase.reward + ' MHA';
+  }
+
+  // Show modal
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay active';
+  modal.innerHTML = `
+    <div class="modal-card">
+      <span class="modal-icon">${emoji}</span>
+      <h2>${title}</h2>
+      ${bigValue ? `<div class="purchase-reward-big">${bigValue}</div>` : ''}
+      <button class="modal-btn" onclick="this.closest('.modal-overlay').remove()">OK</button>
+    </div>
+  `;
+  document.body.appendChild(modal);
+  SoundManager.gift();
+
+  // Reload score/inventory after 1s
+  setTimeout(() => {
+    db.ref('players/' + userId).once('value').then(s => {
+      const d = s.val();
+      if (d) {
+        if (typeof d.score === 'number') score = d.score;
+        if (d.powerups) {
+          inventory.magnet = d.powerups.magnet || 0;
+          inventory.x2 = d.powerups.x2 || 0;
+          inventory.shield = d.powerups.shield || 0;
+        }
+        updateUI();
+      }
+    });
+  }, 1500);
 }
 
 // --- Daily Reward ---
@@ -300,47 +376,6 @@ function closeTutorial() {
   SoundManager.click();
 }
 
-// --- Leaderboard ---
-function openLeaderboard() {
-  SoundManager.click();
-  const modal = document.getElementById('lb-modal');
-  modal.classList.add('active');
-  const list = document.getElementById('lb-list');
-  list.innerHTML = '<div class="lb-empty">جاري التحميل...</div>';
-  db.ref('players').orderByChild('score').limitToLast(50).once('value').then(snap => {
-    const arr = [];
-    snap.forEach(c => arr.push({ id: c.key, ...c.val() }));
-    arr.reverse();
-    if (!arr.length) { list.innerHTML = '<div class="lb-empty">لا يوجد لاعبون بعد</div>'; return; }
-    const myId = getUserId();
-    list.innerHTML = arr.map((p, i) => {
-      const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : (i + 1);
-      const me = p.id === myId ? ' me' : '';
-      const nm = (p.name || 'لاعب').slice(0, 14);
-      return `<div class="lb-row${me}"><span class="lb-rank">${medal}</span><span class="lb-name">${nm}</span><span class="lb-score">${(p.score || 0).toFixed(2)}</span></div>`;
-    }).join('');
-  }).catch(() => {
-    list.innerHTML = '<div class="lb-empty">تعذر التحميل</div>';
-  });
-}
-function closeLeaderboard() {
-  SoundManager.click();
-  document.getElementById('lb-modal').classList.remove('active');
-}
-
-function shareGame() {
-  SoundManager.click();
-  const userId = getUserId();
-  const refLink = `${BOT_LINK}?startapp=${userId}`;
-  const text = '🦈 انضم إليّ في MHASpace واربح MHA من أعماق المحيط!';
-  const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(refLink)}&text=${encodeURIComponent(text)}`;
-  if (window.Telegram?.WebApp?.openTelegramLink) {
-    window.Telegram.WebApp.openTelegramLink(shareUrl);
-  } else {
-    window.open(shareUrl, '_blank');
-  }
-}
-
 // --- Mute ---
 function toggleMute() {
   const muted = SoundManager.toggle();
@@ -361,7 +396,7 @@ function updateUI() {
   const text = document.getElementById('level-text');
   if (badge && text) {
     badge.className = 'level-badge ' + level.class;
-    text.innerText = level.name;
+    text.innerText = t(level.key);
     const iconEl = badge.querySelector('.icon');
     if (iconEl) iconEl.innerText = level.icon;
   }
@@ -378,7 +413,7 @@ function updateUI() {
     if (pNext) pNext.innerText = formatNum(range);
   } else if (fill && pText) {
     fill.style.width = '100%';
-    pText.innerText = 'أعلى مستوى!';
+    pText.innerText = t('maxLevel');
     if (pNext) pNext.innerText = '';
   }
 
@@ -388,7 +423,7 @@ function updateUI() {
     if (tempMultiplier > 1 && now < tempBoostExpiry) {
       const s = Math.ceil((tempBoostExpiry - now) / 1000);
       rank.style.display = 'inline-block';
-      rank.innerText = `🔥 ${tempMultiplier}x (${s}ث)`;
+      rank.innerText = `🔥 ${tempMultiplier}x (${s}s)`;
     } else {
       rank.style.display = 'none';
     }
@@ -404,11 +439,23 @@ function updatePowerupBar() {
   let html = '';
   if (now < magnetExpiry) {
     const s = Math.ceil((magnetExpiry - now) / 1000);
-    html += `<div class="powerup-chip magnet">🧲 مغناطيس ${s}ث</div>`;
+    html += `<div class="powerup-chip magnet">🧲 ${s}s</div>`;
   }
   if (now < x2Expiry) {
     const s = Math.ceil((x2Expiry - now) / 1000);
-    html += `<div class="powerup-chip x2">✨ ×2 ${s}ث</div>`;
+    html += `<div class="powerup-chip x2">✨ ×2 ${s}s</div>`;
+  }
+  if (now < shieldExpiry) {
+    const s = Math.ceil((shieldExpiry - now) / 1000);
+    html += `<div class="powerup-chip">🛡️ ${s}s</div>`;
+  }
+  // Show inventory counts
+  const inv = [];
+  if (inventory.magnet > 0) inv.push(`🧲×${inventory.magnet}`);
+  if (inventory.x2 > 0)     inv.push(`⚡×${inventory.x2}`);
+  if (inventory.shield > 0) inv.push(`🛡️×${inventory.shield}`);
+  if (inv.length) {
+    html += `<div class="powerup-chip" style="font-size:11px;">${inv.join(' ')}</div>`;
   }
   bar.innerHTML = html;
 }
@@ -478,7 +525,7 @@ async function watchTimedAd() {
   if (now - lastAdWatchTime < AD_COOLDOWN_MS) {
     const r = AD_COOLDOWN_MS - (now - lastAdWatchTime);
     const m = Math.floor(r / 60000), s = Math.floor((r % 60000) / 1000);
-    alert(`⏳ انتظر ${m}:${s.toString().padStart(2, '0')} قبل إعلان جديد.`);
+    alert(`${t('adWait')} ${m}:${s.toString().padStart(2, '0')} ${t('adBefore')}`);
     return;
   }
   const btn = document.getElementById('ad-btn');
@@ -492,12 +539,12 @@ async function watchTimedAd() {
       tempBoostExpiry = Date.now() + TEMP_BOOST_DURATION_MS;
       updateUI();
       SoundManager.powerup();
-      alert(`🎬 تعزيز ${AD_BOOST_MULTIPLIER}x فعال لمدة 90 ثانية!`);
+      alert(t('adBoost'));
       setTimeout(() => { tempMultiplier = 1; tempBoostExpiry = 0; updateUI(); }, TEMP_BOOST_DURATION_MS);
     } else {
-      alert("⚠️ لا توجد إعلانات متاحة. جرب لاحقاً.");
+      alert(t('adNoAds'));
     }
-  } catch (e) { alert("⚠️ خطأ. جرب مرة أخرى."); }
+  } catch (e) { alert(t('adError')); }
   finally { if (btn) btn.disabled = false; }
 }
 
@@ -596,7 +643,7 @@ function spawnTreasure(isBig = false) {
 // Gift Boxes
 function maybeSpawnGift() {
   if (isPaused) return;
-  if (Math.random() > 0.6) return; // 40% chance
+  if (Math.random() > 0.6) return;
   const geo = new THREE.BoxGeometry(1.4, 1.4, 1.4);
   const mat = new THREE.MeshStandardMaterial({ color: 0xfbbf24, emissive: 0xf59e0b, emissiveIntensity: 0.7, metalness: 0.6, roughness: 0.3 });
   const mesh = new THREE.Mesh(geo, mat);
@@ -609,7 +656,7 @@ function maybeSpawnGift() {
 // Power-ups
 function maybeSpawnPowerup() {
   if (isPaused) return;
-  if (Math.random() > 0.7) return; // 30% chance
+  if (Math.random() > 0.7) return;
   const type = Math.random() < 0.5 ? 'magnet' : 'x2';
   const color = type === 'magnet' ? 0xf472b6 : 0xf59e0b;
   const geo = new THREE.OctahedronGeometry(0.8, 0);
@@ -691,7 +738,6 @@ window.addEventListener('resize', () => {
   renderer.setSize(window.innerWidth, window.innerHeight);
 });
 
-// --- Biome update on level up ---
 function applyBiome(levelIndex) {
   const biome = BIOMES[levelIndex] || BIOMES[1];
   scene.background = new THREE.Color(biome.bg);
@@ -703,7 +749,6 @@ function applyBiome(levelIndex) {
 function onCatch(t) {
   const now = Date.now();
 
-  // Combo
   if (now - lastCatchTime < COMBO_WINDOW_MS) {
     comboCount++;
   } else {
@@ -718,7 +763,6 @@ function onCatch(t) {
   const eff = getEffectiveMultiplier();
 
   if (t.userData.type === 'gift') {
-    // Random reward
     const roll = Math.random();
     let reward = 0;
     if (roll < 0.5) reward = 10;
@@ -732,20 +776,19 @@ function onCatch(t) {
   } else if (t.userData.type === 'powerup') {
     if (t.userData.powerType === 'magnet') {
       magnetExpiry = now + POWERUP_DURATION_MS;
-      showFloatingText('🧲 مغناطيس مفعل!', '#f472b6');
+      showFloatingText('🧲 ON!', '#f472b6');
     } else {
       x2Expiry = now + POWERUP_DURATION_MS;
-      showFloatingText('✨ مضاعف ×2!', '#f59e0b');
+      showFloatingText('✨ ×2 ON!', '#f59e0b');
     }
     SoundManager.powerup();
     createBubbleBurst(t.position, t.userData.powerType === 'magnet' ? 0xf472b6 : 0xf59e0b);
   } else {
-    // Regular pearl
     const reward = t.userData.isBig ? (1.0 * eff) : (0.01 * eff);
     score += reward;
     if (t.userData.isBig) {
       SoundManager.bigBite();
-      showFloatingText('قضمة! +' + (1.0 * eff).toFixed(2) + ' MHA 🌟');
+      showFloatingText('+' + (1.0 * eff).toFixed(2) + ' MHA 🌟');
       createBubbleBurst(t.position, 0xf59e0b);
     } else {
       SoundManager.smallBite();
@@ -756,13 +799,12 @@ function onCatch(t) {
   updateUI();
   scheduleSave();
 
-  // Level up check
   const newLevel = getLevel(score);
   if (lastLevel && newLevel.min > lastLevel.min) {
     const idx = LEVELS.indexOf(newLevel) + 1;
     applyBiome(idx);
     SoundManager.levelUp();
-    showFloatingText('🎉 ' + newLevel.icon + ' ' + newLevel.name + '!');
+    showFloatingText('🎉 ' + newLevel.icon + ' ' + t(newLevel.key) + '!');
     if (window.Telegram?.WebApp?.HapticFeedback) {
       window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
     }
@@ -792,7 +834,6 @@ function animate() {
   sharkGroup.rotation.z += (targetTilt - sharkGroup.rotation.z) * 0.1;
   targetTilt *= 0.9;
 
-  // Particles
   for (let i = particles.length - 1; i >= 0; i--) {
     const p = particles[i];
     p.life -= 0.04;
@@ -807,10 +848,8 @@ function animate() {
     if (p.life <= 0) { scene.remove(p.system); particles.splice(i, 1); }
   }
 
-  // Magnet active?
   const magnetActive = Date.now() < magnetExpiry;
 
-  // Treasures
   for (let i = treasures.length - 1; i >= 0; i--) {
     const t = treasures[i];
     t.position.z += t.userData.speed;
@@ -820,7 +859,6 @@ function animate() {
     if (t.userData.isBig) t.position.y = Math.sin(Date.now() * 0.005 + t.userData.floatOffset) * 0.3;
     if (t.userData.type === 'gift') t.position.y = Math.sin(Date.now() * 0.003) * 0.4;
 
-    // Magnet effect
     if (magnetActive && t.userData.type === 'pearl') {
       const dx = sharkGroup.position.x - t.position.x;
       const dy = sharkGroup.position.y - t.position.y;
@@ -846,7 +884,7 @@ function animate() {
 }
 animate();
 
-// UI tick (fixed, not tied to frame rate)
+// UI tick
 uiInterval = setInterval(() => {
   if (!isPaused) updateUI();
 }, 500);
@@ -871,36 +909,59 @@ document.addEventListener('visibilitychange', () => {
 
 // Set initial level reference
 setTimeout(() => { lastLevel = getLevel(score); }, 1500);
-// Set initial level reference
-setTimeout(() => { lastLevel = getLevel(score); }, 1500);
+
 // ==========================================
-// 🛒 المتجر والدفع بالنجوم
+// 🛒 Store (Powerups + Boxes)
 // ==========================================
 const STORE_ITEMS = [
-  { id: 'boost_500',    icon: '💎', title: 'باقة 500 MHA',    desc: 'أضف 500 MHA لرصيدك فوراً',   price: 50  },
-  { id: 'boost_5000',   icon: '💰', title: 'باقة 5000 MHA',   desc: 'أضف 5000 MHA لرصيدك فوراً',  price: 300 },
-  { id: 'skin_gold',    icon: '🥇', title: 'قرش ذهبي',         desc: 'شكل ذهبي حصري للقرش',        price: 100 },
-  { id: 'skin_dragon',  icon: '🐉', title: 'قرش التنين',       desc: 'شكل ناري أسطوري',             price: 250 },
-  { id: 'pass_monthly', icon: '👑', title: 'Shark Pass (شهر)', desc: 'مزايا حصرية لمدة 30 يوم',     price: 500 }
+  { id: 'magnet_60' },
+  { id: 'boost_x2' },
+  { id: 'shield_combo' },
+  { id: 'box_bronze' },
+  { id: 'box_silver' },
+  { id: 'box_gold' },
+  { id: 'box_magnet5' },
+  { id: 'box_mixed' },
+  { id: 'pass_monthly' }
 ];
+
+// Product metadata (title/desc keys + price for display)
+const STORE_META = {
+  'magnet_60':    { icon: '🧲', titleKey: 'prod_magnet_60',    descKey: 'prod_magnet_60_desc',    price: 2  },
+  'boost_x2':     { icon: '⚡', titleKey: 'prod_boost_x2',     descKey: 'prod_boost_x2_desc',     price: 2  },
+  'shield_combo': { icon: '🛡️', titleKey: 'prod_shield_combo', descKey: 'prod_shield_combo_desc', price: 3  },
+  'box_bronze':   { icon: '💎', titleKey: 'prod_box_bronze',   descKey: 'prod_box_bronze_desc',   price: 3  },
+  'box_silver':   { icon: '💠', titleKey: 'prod_box_silver',   descKey: 'prod_box_silver_desc',   price: 8  },
+  'box_gold':     { icon: '👑', titleKey: 'prod_box_gold',     descKey: 'prod_box_gold_desc',     price: 25 },
+  'box_magnet5':  { icon: '📦', titleKey: 'prod_box_magnet5',  descKey: 'prod_box_magnet5_desc',  price: 5  },
+  'box_mixed':    { icon: '🎁', titleKey: 'prod_box_mixed',    descKey: 'prod_box_mixed_desc',    price: 10 },
+  'pass_monthly': { icon: '👑', titleKey: 'prod_pass_monthly', descKey: 'prod_pass_monthly_desc', price: 50 }
+};
+
+function renderStore() {
+  const grid = document.getElementById('store-grid');
+  if (!grid) return;
+  grid.innerHTML = STORE_ITEMS.map(item => {
+    const meta = STORE_META[item.id];
+    return `
+      <div class="store-item" onclick="buyProduct('${item.id}')">
+        <div class="si-icon">${meta.icon}</div>
+        <div class="si-body">
+          <div class="si-title">${t(meta.titleKey)}</div>
+          <div class="si-desc">${t(meta.descKey)}</div>
+        </div>
+        <div class="si-price">
+          <div class="num">${meta.price}</div>
+          <div class="lbl">${t('priceLabel')}</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
 
 function openStore() {
   SoundManager.click();
-  const grid = document.getElementById('store-grid');
-  if (!grid) return;
-  grid.innerHTML = STORE_ITEMS.map(item => `
-    <div class="store-item" onclick="buyProduct('${item.id}')">
-      <div class="si-icon">${item.icon}</div>
-      <div class="si-body">
-        <div class="si-title">${item.title}</div>
-        <div class="si-desc">${item.desc}</div>
-      </div>
-      <div class="si-price">
-        <div class="num">${item.price}</div>
-        <div class="lbl">⭐ نجمة</div>
-      </div>
-    </div>
-  `).join('');
+  renderStore();
   document.getElementById('store-modal').classList.add('active');
 }
 
@@ -915,7 +976,7 @@ async function buyProduct(productId) {
   const initData = tg?.initData;
 
   if (!tg || !tg.openInvoice || !initData) {
-    alert('⚠️ الدفع بالنجوم متاح فقط داخل تطبيق Telegram');
+    alert(t('payNotTg'));
     return;
   }
 
@@ -926,30 +987,30 @@ async function buyProduct(productId) {
     const res = await fetch('/api/create-invoice', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ productId, initData })
+      body: JSON.stringify({ productId, initData, lang: getLang() })
     });
     const data = await res.json();
 
     if (payModal) payModal.classList.remove('active');
 
     if (!data.url) {
-      alert('❌ ' + (data.error || 'فشل إنشاء الفاتورة'));
+      alert('❌ ' + (data.error || t('payError')));
       return;
     }
 
     tg.openInvoice(data.url, (status) => {
       if (status === 'paid') {
         SoundManager.gift();
-        alert('🎉 شكراً لك! سيصل الشراء خلال لحظات.');
+        alert(t('paySuccess'));
         if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
         setTimeout(() => location.reload(), 1500);
       } else if (status === 'failed') {
-        alert('⚠️ فشل الدفع. جرب مرة أخرى.');
+        alert(t('payFail'));
       }
     });
   } catch (e) {
     console.error(e);
     if (payModal) payModal.classList.remove('active');
-    alert('⚠️ خطأ في الاتصال بالسيرفر');
+    alert(t('payNetErr'));
   }
 }
