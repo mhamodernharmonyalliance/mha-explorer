@@ -207,3 +207,55 @@ async function applyProduct(env, userId, product) {
     body: JSON.stringify({ userId, type: product.type, value: product.value, at: Date.now() })
   });
                   }
+// ==========================================
+// 🎬 استقبال Reward URL من Adsgram
+// يُستدعى عندما يشاهد المستخدم إعلاناً كاملاً
+// ==========================================
+async function handleReward(request, env) {
+  try {
+    const url = new URL(request.url);
+    const userId = url.searchParams.get('userId');
+
+    if (!userId) {
+      return new Response('Missing userId', { status: 400 });
+    }
+
+    console.log(`🎬 Ad reward for user: ${userId}`);
+
+    // 📝 سجّل المشاهدة في Firebase
+    const timestamp = Date.now();
+    await fetch(`${FIREBASE}/ad_rewards.json`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userId,
+        at: timestamp,
+        source: 'adsgram'
+      })
+    });
+
+    // 📊 حدّث عدّاد المشاهدات عند اللاعب
+    const counterRef = `${FIREBASE}/players/${userId}/adCount.json`;
+    const snap = await fetch(counterRef).then(r => r.json()).catch(() => 0);
+    const currentCount = typeof snap === 'number' ? snap : 0;
+
+    await fetch(`${FIREBASE}/players/${userId}.json`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        adCount: currentCount + 1,
+        lastAdAt: timestamp
+      })
+    });
+
+    // ⚠️ يجب أن نرجع 200 OK حتى يعرف Adsgram أننا استلمنا
+    return new Response('OK', {
+      status: 200,
+      headers: { 'Content-Type': 'text/plain' }
+    });
+  } catch (e) {
+    console.error('reward error:', e);
+    // نرجع 200 حتى لا يعيد Adsgram المحاولة
+    return new Response('OK', { status: 200 });
+  }
+}
