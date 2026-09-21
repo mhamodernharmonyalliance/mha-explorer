@@ -871,3 +871,85 @@ document.addEventListener('visibilitychange', () => {
 
 // Set initial level reference
 setTimeout(() => { lastLevel = getLevel(score); }, 1500);
+// Set initial level reference
+setTimeout(() => { lastLevel = getLevel(score); }, 1500);
+// ==========================================
+// 🛒 المتجر والدفع بالنجوم
+// ==========================================
+const STORE_ITEMS = [
+  { id: 'boost_500',    icon: '💎', title: 'باقة 500 MHA',    desc: 'أضف 500 MHA لرصيدك فوراً',   price: 50  },
+  { id: 'boost_5000',   icon: '💰', title: 'باقة 5000 MHA',   desc: 'أضف 5000 MHA لرصيدك فوراً',  price: 300 },
+  { id: 'skin_gold',    icon: '🥇', title: 'قرش ذهبي',         desc: 'شكل ذهبي حصري للقرش',        price: 100 },
+  { id: 'skin_dragon',  icon: '🐉', title: 'قرش التنين',       desc: 'شكل ناري أسطوري',             price: 250 },
+  { id: 'pass_monthly', icon: '👑', title: 'Shark Pass (شهر)', desc: 'مزايا حصرية لمدة 30 يوم',     price: 500 }
+];
+
+function openStore() {
+  SoundManager.click();
+  const grid = document.getElementById('store-grid');
+  if (!grid) return;
+  grid.innerHTML = STORE_ITEMS.map(item => `
+    <div class="store-item" onclick="buyProduct('${item.id}')">
+      <div class="si-icon">${item.icon}</div>
+      <div class="si-body">
+        <div class="si-title">${item.title}</div>
+        <div class="si-desc">${item.desc}</div>
+      </div>
+      <div class="si-price">
+        <div class="num">${item.price}</div>
+        <div class="lbl">⭐ نجمة</div>
+      </div>
+    </div>
+  `).join('');
+  document.getElementById('store-modal').classList.add('active');
+}
+
+function closeStore() {
+  SoundManager.click();
+  document.getElementById('store-modal').classList.remove('active');
+}
+
+async function buyProduct(productId) {
+  SoundManager.click();
+  const tg = window.Telegram?.WebApp;
+  const initData = tg?.initData;
+
+  if (!tg || !tg.openInvoice || !initData) {
+    alert('⚠️ الدفع بالنجوم متاح فقط داخل تطبيق Telegram');
+    return;
+  }
+
+  const payModal = document.getElementById('pay-modal');
+  if (payModal) payModal.classList.add('active');
+
+  try {
+    const res = await fetch('/api/create-invoice', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ productId, initData })
+    });
+    const data = await res.json();
+
+    if (payModal) payModal.classList.remove('active');
+
+    if (!data.url) {
+      alert('❌ ' + (data.error || 'فشل إنشاء الفاتورة'));
+      return;
+    }
+
+    tg.openInvoice(data.url, (status) => {
+      if (status === 'paid') {
+        SoundManager.gift();
+        alert('🎉 شكراً لك! سيصل الشراء خلال لحظات.');
+        if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+        setTimeout(() => location.reload(), 1500);
+      } else if (status === 'failed') {
+        alert('⚠️ فشل الدفع. جرب مرة أخرى.');
+      }
+    });
+  } catch (e) {
+    console.error(e);
+    if (payModal) payModal.classList.remove('active');
+    alert('⚠️ خطأ في الاتصال بالسيرفر');
+  }
+}
