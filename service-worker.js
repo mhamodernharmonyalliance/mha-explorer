@@ -3,7 +3,7 @@
    Cache v4 (added sound.js)
    ========================================== */
 
-const CACHE = 'mha-v4';
+const CACHE = 'mha-v5';
 const ASSETS = [
   '/',
   '/index.html',
@@ -11,6 +11,7 @@ const ASSETS = [
   '/mha-logo.png',
   '/app.js',
   '/sound.js'
+   '/i18n.js'
 ];
 
 // --- Install: cache core assets ---
