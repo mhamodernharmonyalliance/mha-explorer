@@ -1,6 +1,8 @@
 /* ==========================================
-   MHA Explorer - Silver Shark Edition
-   Firebase + Adsgram + Levels (No TON)
+   MHA Explorer - Silver Shark Edition v2
+   Firebase + Adsgram + Levels + Pause + Combo
+   + Leaderboard + Daily + Powerups + Biomes
+   + Gift Boxes + Sound + Tutorial + Offline
    ========================================== */
 
 // --- Firebase ---
@@ -16,29 +18,88 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
+// --- Constants ---
+const TEMP_BOOST_DURATION_MS = 90 * 1000;
+const AD_COOLDOWN_MS = 3 * 60 * 1000;
+const AD_BOOST_MULTIPLIER = 3;
+const REFERRAL_BONUS = 100;
+const DAILY_REWARD = 50;
+const SAVE_THROTTLE_MS = 5000;
+const COMBO_WINDOW_MS = 2000;
+const POWERUP_DURATION_MS = 30 * 1000;
+const BOT_LINK = 'https://t.me/MHASpaceBot/MHASpace'; // عدّل هذا
+
 // --- State ---
 let score = 0.00;
 let tempMultiplier = 1;
 let tempBoostExpiry = 0;
 let isDataLoaded = false;
 let lastLevel = null;
-const TEMP_BOOST_DURATION_MS = 90 * 1000;
-const AD_COOLDOWN_MS = 3 * 60 * 1000;
-const AD_BOOST_MULTIPLIER = 3;
-const REFERRAL_BONUS = 100;
+let isPaused = false;
 let lastAdWatchTime = 0;
+let lastSaveTime = 0;
+let saveTimer = null;
 
-// --- Levels (كل 100K) ---
+// Combo
+let comboCount = 0;
+let lastCatchTime = 0;
+
+// Power-ups
+let magnetExpiry = 0;
+let x2Expiry = 0;
+
+// Timers
+let treasureSpawnInterval = null;
+let bigTreasureSpawnInterval = null;
+let giftSpawnInterval = null;
+let powerupSpawnInterval = null;
+let uiInterval = null;
+
+// Daily
+let lastDailyClaim = 0;
+
+// Tutorial
+const TUTORIAL_KEY = 'mha_tutorial_done';
+
+// --- Telegram Init ---
+(function initTelegram() {
+  const tg = window.Telegram?.WebApp;
+  if (!tg) return;
+  try {
+    tg.ready();
+    tg.expand();
+    // Sync theme colors
+    const bg = tg.themeParams?.bg_color;
+    if (bg) document.body.style.background = bg;
+    tg.onEvent?.('themeChanged', () => {
+      const nb = tg.themeParams?.bg_color;
+      if (nb) document.body.style.background = nb;
+    });
+  } catch (e) { console.warn('Telegram init:', e); }
+})();
+
+// --- Levels & Biomes ---
 const LEVELS = [
-  { min: 0,       name: "قطرة",       icon: "💧", class: "level-1" },
-  { min: 100000,  name: "جدول",       icon: "🌊", class: "level-2" },
-  { min: 200000,  name: "نهر",        icon: "🏞️", class: "level-3" },
-  { min: 300000,  name: "بحيرة",      icon: "🌅", class: "level-4" },
-  { min: 500000,  name: "بحر",        icon: "🌊", class: "level-5" },
-  { min: 1000000, name: "محيط",       icon: "🐋", class: "level-6" },
-  { min: 2000000, name: "أعماق",      icon: "🦈", class: "level-7" },
-  { min: 5000000, name: "أسطورة",     icon: "👑", class: "level-8" }
+  { min: 0,       name: "قطرة",   icon: "💧", class: "level-1" },
+  { min: 100000,  name: "جدول",   icon: "🌊", class: "level-2" },
+  { min: 200000,  name: "نهر",    icon: "🏞️", class: "level-3" },
+  { min: 300000,  name: "بحيرة",  icon: "🌅", class: "level-4" },
+  { min: 500000,  name: "بحر",    icon: "🌊", class: "level-5" },
+  { min: 1000000, name: "محيط",   icon: "🐋", class: "level-6" },
+  { min: 2000000, name: "أعماق",  icon: "🦈", class: "level-7" },
+  { min: 5000000, name: "أسطورة", icon: "👑", class: "level-8" }
 ];
+
+const BIOMES = {
+  1: { bg: 0x020617, fog: 0x020617, bubble: 0x38bdf8 },
+  2: { bg: 0x041e2e, fog: 0x041e2e, bubble: 0x22d3ee },
+  3: { bg: 0x062e2e, fog: 0x062e2e, bubble: 0x10b981 },
+  4: { bg: 0x0a2f1f, fog: 0x0a2f1f, bubble: 0x4ade80 },
+  5: { bg: 0x0a1e3d, fog: 0x0a1e3d, bubble: 0x60a5fa },
+  6: { bg: 0x1a0f3d, fog: 0x1a0f3d, bubble: 0xa78bfa },
+  7: { bg: 0x3d0a1a, fog: 0x3d0a1a, bubble: 0xf87171 },
+  8: { bg: 0x3d2a05, fog: 0x3d2a05, bubble: 0xfbbf24 }
+};
 
 function getLevel(s) {
   let cur = LEVELS[0];
@@ -49,41 +110,48 @@ function getNextLevel(s) {
   for (const lv of LEVELS) { if (s < lv.min) return lv; }
   return null;
 }
+function formatNum(n) {
+  if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M';
+  if (n >= 1000) return (n / 1000).toFixed(0) + 'K';
+  return Math.floor(n).toString();
+}
 
 // --- Adsgram ---
 let AdController = null;
 let adsgramReady = false;
 function initAdsgram() {
-  if (typeof window.Adsgram === 'undefined') { console.warn('⚠️ Adsgram SDK غير محمّل'); return false; }
+  if (typeof window.Adsgram === 'undefined') return false;
   try {
     AdController = window.Adsgram.init({ blockId: "48760" });
     adsgramReady = true;
-    console.log('✅ Adsgram جاهز');
     return true;
-  } catch (e) { console.error('❌ فشل تهيئة Adsgram:', e); return false; }
+  } catch (e) { return false; }
 }
 setTimeout(initAdsgram, 2000);
 
 async function showRewardedAd() {
   if (adsgramReady && AdController) {
-    try {
-      await AdController.show();
-      return { success: true, network: 'adsgram' };
-    } catch (e) { console.warn('Adsgram فشل:', e); }
+    try { await AdController.show(); return { success: true }; }
+    catch (e) { console.warn('Adsgram failed:', e); }
   }
-  return { success: false, network: null };
+  return { success: false };
 }
 
 // --- User ---
 function getUserId() {
   const u = window.Telegram?.WebApp?.initDataUnsafe?.user;
   if (u && u.id) return u.id.toString();
-  return "GUEST_USER";
+  let guest = localStorage.getItem('mha_guest_id');
+  if (!guest) {
+    guest = 'GUEST_' + Math.random().toString(36).slice(2, 10);
+    localStorage.setItem('mha_guest_id', guest);
+  }
+  return guest;
 }
 function getUserName() {
   const u = window.Telegram?.WebApp?.initDataUnsafe?.user;
-  if (u) return (u.first_name || '') + ' ' + (u.last_name || '');
-  return 'Guest';
+  if (u) return (u.first_name || '') + (u.last_name ? ' ' + u.last_name : '');
+  return 'ضيف';
 }
 function getReferrerId() {
   const sp = window.Telegram?.WebApp?.initDataUnsafe?.start_param;
@@ -93,76 +161,194 @@ function getReferrerId() {
 // --- Auto Register ---
 async function autoRegisterUser() {
   const userId = getUserId();
-  if (!userId || userId === "GUEST_USER") return;
+  if (!userId) return;
   const userRef = db.ref('players/' + userId);
-  const snap = await userRef.once('value');
-  if (!snap.exists()) {
-    await userRef.set({
-      score: 0,
-      name: getUserName(),
-      joinedAt: Date.now(),
-      lastActive: Date.now(),
-      referredBy: null,
-      referredByProcessed: false,
-      unclaimedRefBonus: 0,
-      successfulRefsCount: 0
-    });
-    console.log('✅ مستخدم جديد');
-    const referrerId = getReferrerId();
-    if (referrerId && referrerId !== userId) {
-      await userRef.update({ referredBy: referrerId, referredByProcessed: true });
-      await db.ref('players/' + referrerId + '/unclaimedRefBonus').transaction(c => (c || 0) + REFERRAL_BONUS);
-      await db.ref('players/' + referrerId + '/successfulRefsCount').transaction(c => (c || 0) + 1);
-      console.log('🎁 مكافأة إحالة');
+  try {
+    const snap = await userRef.once('value');
+    if (!snap.exists()) {
+      await userRef.set({
+        score: 0,
+        name: getUserName(),
+        joinedAt: Date.now(),
+        lastActive: Date.now(),
+        referredBy: null,
+        referredByProcessed: false,
+        unclaimedRefBonus: 0,
+        successfulRefsCount: 0,
+        lastDailyClaim: 0
+      });
+      const referrerId = getReferrerId();
+      if (referrerId && referrerId !== userId) {
+        await userRef.update({ referredBy: referrerId, referredByProcessed: true });
+        await db.ref('players/' + referrerId + '/unclaimedRefBonus').transaction(c => (c || 0) + REFERRAL_BONUS);
+        await db.ref('players/' + referrerId + '/successfulRefsCount').transaction(c => (c || 0) + 1);
+      }
+    } else {
+      userRef.update({ lastActive: Date.now(), name: getUserName() });
     }
-  } else {
-    userRef.update({ lastActive: Date.now() });
-  }
+  } catch (e) { console.warn('autoRegister:', e); }
 }
 
-// --- Load/Save ---
+// --- Save (Throttled) ---
+function scheduleSave() {
+  if (saveTimer) return;
+  const elapsed = Date.now() - lastSaveTime;
+  const wait = Math.max(0, SAVE_THROTTLE_MS - elapsed);
+  saveTimer = setTimeout(() => {
+    saveTimer = null;
+    saveToFirebase();
+  }, wait);
+}
+
 function saveToFirebase() {
   if (!isDataLoaded) return;
   const userId = getUserId();
-  if (!userId || userId === "GUEST_USER") return;
-  db.ref('players/' + userId).update({ score, lastActive: Date.now() });
+  if (!userId) return;
+  lastSaveTime = Date.now();
+  // Offline backup
+  try { localStorage.setItem('mha_offline_score', score.toString()); } catch (e) {}
+  db.ref('players/' + userId).update({ score, lastActive: Date.now() })
+    .catch(e => console.warn('save failed:', e));
 }
 
+// --- Load ---
 async function loadUserData() {
   await autoRegisterUser();
   const userId = getUserId();
-  db.ref('players/' + userId).once('value').then((snap) => {
+  try {
+    const snap = await db.ref('players/' + userId).once('value');
     const data = snap.val();
-    if (data) score = typeof data.score === 'number' ? data.score : 0;
+    if (data) {
+      score = typeof data.score === 'number' ? data.score : 0;
+      lastDailyClaim = data.lastDailyClaim || 0;
+    } else {
+      const cached = parseFloat(localStorage.getItem('mha_offline_score') || '0');
+      if (cached > 0) score = cached;
+    }
     isDataLoaded = true;
     const splash = document.getElementById('splash-loader');
-    if (splash) splash.style.display = 'none';
+    if (splash) splash.classList.add('hide');
     const status = document.getElementById('db-status');
     if (status) status.innerText = 'متصل ✓';
     updateUI();
-    checkPendingReferralBonuses(userId);
     startAdCooldownTicker();
-  }).catch((e) => {
+    checkPendingReferralBonuses(userId);
+    checkDailyReward();
+    maybeShowTutorial();
+  } catch (e) {
     console.error(e);
+    const cached = parseFloat(localStorage.getItem('mha_offline_score') || '0');
+    if (cached > 0) score = cached;
     isDataLoaded = true;
     const splash = document.getElementById('splash-loader');
-    if (splash) splash.style.display = 'none';
-  });
+    if (splash) splash.classList.add('hide');
+    const status = document.getElementById('db-status');
+    if (status) status.innerText = 'وضع غير متصل';
+    updateUI();
+    startAdCooldownTicker();
+  }
 }
 loadUserData();
 
 function checkPendingReferralBonuses(userId) {
-  const ref = db.ref('players/' + userId + '/unclaimedRefBonus');
-  ref.once('value').then((snap) => {
+  db.ref('players/' + userId + '/unclaimedRefBonus').once('value').then(snap => {
     const amount = snap.val();
     if (amount && amount > 0) {
       score += amount;
-      ref.remove();
+      db.ref('players/' + userId + '/unclaimedRefBonus').remove();
       updateUI();
       saveToFirebase();
+      SoundManager.gift();
       alert('🎁 مفاجأة! حصلت على ' + amount + ' MHA مقابل إحالة ناجحة!');
     }
   });
+}
+
+// --- Daily Reward ---
+function checkDailyReward() {
+  const now = Date.now();
+  const dayMs = 24 * 60 * 60 * 1000;
+  if (now - lastDailyClaim >= dayMs) {
+    document.getElementById('daily-modal').classList.add('active');
+  }
+}
+
+function claimDaily() {
+  const now = Date.now();
+  lastDailyClaim = now;
+  score += DAILY_REWARD;
+  updateUI();
+  saveToFirebase();
+  SoundManager.gift();
+  db.ref('players/' + getUserId() + '/lastDailyClaim').set(now);
+  document.getElementById('daily-modal').classList.remove('active');
+  showFloatingText('+' + DAILY_REWARD + ' MHA 🎁');
+  if (window.Telegram?.WebApp?.HapticFeedback) {
+    window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
+  }
+}
+
+// --- Tutorial ---
+function maybeShowTutorial() {
+  if (!localStorage.getItem(TUTORIAL_KEY)) {
+    setTimeout(() => document.getElementById('tut-modal').classList.add('active'), 700);
+  }
+}
+function closeTutorial() {
+  localStorage.setItem(TUTORIAL_KEY, '1');
+  document.getElementById('tut-modal').classList.remove('active');
+  SoundManager.click();
+}
+
+// --- Leaderboard ---
+function openLeaderboard() {
+  SoundManager.click();
+  const modal = document.getElementById('lb-modal');
+  modal.classList.add('active');
+  const list = document.getElementById('lb-list');
+  list.innerHTML = '<div class="lb-empty">جاري التحميل...</div>';
+  db.ref('players').orderByChild('score').limitToLast(50).once('value').then(snap => {
+    const arr = [];
+    snap.forEach(c => arr.push({ id: c.key, ...c.val() }));
+    arr.reverse();
+    if (!arr.length) { list.innerHTML = '<div class="lb-empty">لا يوجد لاعبون بعد</div>'; return; }
+    const myId = getUserId();
+    list.innerHTML = arr.map((p, i) => {
+      const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : (i + 1);
+      const me = p.id === myId ? ' me' : '';
+      const nm = (p.name || 'لاعب').slice(0, 14);
+      return `<div class="lb-row${me}"><span class="lb-rank">${medal}</span><span class="lb-name">${nm}</span><span class="lb-score">${(p.score || 0).toFixed(2)}</span></div>`;
+    }).join('');
+  }).catch(() => {
+    list.innerHTML = '<div class="lb-empty">تعذر التحميل</div>';
+  });
+}
+function closeLeaderboard() {
+  SoundManager.click();
+  document.getElementById('lb-modal').classList.remove('active');
+}
+
+function shareGame() {
+  SoundManager.click();
+  const userId = getUserId();
+  const refLink = `${BOT_LINK}?startapp=${userId}`;
+  const text = '🦈 انضم إليّ في MHASpace واربح MHA من أعماق المحيط!';
+  const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(refLink)}&text=${encodeURIComponent(text)}`;
+  if (window.Telegram?.WebApp?.openTelegramLink) {
+    window.Telegram.WebApp.openTelegramLink(shareUrl);
+  } else {
+    window.open(shareUrl, '_blank');
+  }
+}
+
+// --- Mute ---
+function toggleMute() {
+  const muted = SoundManager.toggle();
+  const btn = document.getElementById('mute-btn');
+  if (btn) {
+    btn.innerText = muted ? '🔇' : '🔊';
+    btn.classList.toggle('muted', muted);
+  }
 }
 
 // --- UI ---
@@ -183,14 +369,17 @@ function updateUI() {
   const next = getNextLevel(score);
   const fill = document.getElementById('level-progress-fill');
   const pText = document.getElementById('level-progress-text');
+  const pNext = document.getElementById('level-next-target');
   if (next && fill && pText) {
     const range = next.min - level.min;
     const progress = score - level.min;
     fill.style.width = Math.min(100, (progress / range) * 100) + '%';
-    pText.innerText = Math.floor(progress).toLocaleString();
+    pText.innerText = formatNum(progress);
+    if (pNext) pNext.innerText = formatNum(range);
   } else if (fill && pText) {
     fill.style.width = '100%';
     pText.innerText = 'أعلى مستوى!';
+    if (pNext) pNext.innerText = '';
   }
 
   const rank = document.getElementById('rank-badge');
@@ -204,16 +393,87 @@ function updateUI() {
       rank.style.display = 'none';
     }
   }
+
+  updatePowerupBar();
+}
+
+function updatePowerupBar() {
+  const bar = document.getElementById('powerup-bar');
+  if (!bar) return;
+  const now = Date.now();
+  let html = '';
+  if (now < magnetExpiry) {
+    const s = Math.ceil((magnetExpiry - now) / 1000);
+    html += `<div class="powerup-chip magnet">🧲 مغناطيس ${s}ث</div>`;
+  }
+  if (now < x2Expiry) {
+    const s = Math.ceil((x2Expiry - now) / 1000);
+    html += `<div class="powerup-chip x2">✨ ×2 ${s}ث</div>`;
+  }
+  bar.innerHTML = html;
 }
 
 function getEffectiveMultiplier() {
   const now = Date.now();
-  if (tempMultiplier > 1 && now < tempBoostExpiry) return tempMultiplier;
-  return 1;
+  let m = 1;
+  if (tempMultiplier > 1 && now < tempBoostExpiry) m *= tempMultiplier;
+  if (now < x2Expiry) m *= 2;
+  if (now - lastCatchTime < COMBO_WINDOW_MS) {
+    if (comboCount >= 10) m *= 2;
+    else if (comboCount >= 5) m *= 1.5;
+  }
+  return m;
 }
 
-// --- Timed Ad ---
+// ==========================================
+// --- Pause ---
+// ==========================================
+function togglePause() {
+  isPaused = !isPaused;
+  const overlay = document.getElementById('pause-overlay');
+  const btn = document.getElementById('pause-btn');
+
+  if (isPaused) {
+    stopSpawners();
+    overlay?.classList.add('active');
+    if (btn) { btn.innerText = '▶️'; btn.classList.add('is-active'); }
+  } else {
+    startSpawners();
+    overlay?.classList.remove('active');
+    if (btn) { btn.innerText = '⏸️'; btn.classList.remove('is-active'); }
+  }
+  SoundManager.click();
+  if (window.Telegram?.WebApp?.HapticFeedback) {
+    window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
+  }
+}
+
+function stopSpawners() {
+  if (treasureSpawnInterval)    { clearInterval(treasureSpawnInterval);    treasureSpawnInterval = null; }
+  if (bigTreasureSpawnInterval) { clearInterval(bigTreasureSpawnInterval); bigTreasureSpawnInterval = null; }
+  if (giftSpawnInterval)        { clearInterval(giftSpawnInterval);        giftSpawnInterval = null; }
+  if (powerupSpawnInterval)     { clearInterval(powerupSpawnInterval);     powerupSpawnInterval = null; }
+}
+
+function startSpawners() {
+  if (!treasureSpawnInterval)    treasureSpawnInterval    = setInterval(() => spawnTreasure(false), 800);
+  if (!bigTreasureSpawnInterval) bigTreasureSpawnInterval = setInterval(() => spawnTreasure(true), 5000);
+  if (!giftSpawnInterval)        giftSpawnInterval        = setInterval(() => maybeSpawnGift(), 12000);
+  if (!powerupSpawnInterval)     powerupSpawnInterval     = setInterval(() => maybeSpawnPowerup(), 15000);
+}
+
+window.addEventListener('keydown', (e) => {
+  if (e.code === 'Space' && !e.target.matches('button, input')) {
+    e.preventDefault();
+    togglePause();
+  }
+});
+
+// ==========================================
+// --- Ads ---
+// ==========================================
 async function watchTimedAd() {
+  if (isPaused) return;
   const now = Date.now();
   if (now - lastAdWatchTime < AD_COOLDOWN_MS) {
     const r = AD_COOLDOWN_MS - (now - lastAdWatchTime);
@@ -227,19 +487,24 @@ async function watchTimedAd() {
     const result = await showRewardedAd();
     if (result.success) {
       lastAdWatchTime = Date.now();
+      localStorage.setItem('mha_last_ad', lastAdWatchTime.toString());
       tempMultiplier = AD_BOOST_MULTIPLIER;
       tempBoostExpiry = Date.now() + TEMP_BOOST_DURATION_MS;
       updateUI();
+      SoundManager.powerup();
       alert(`🎬 تعزيز ${AD_BOOST_MULTIPLIER}x فعال لمدة 90 ثانية!`);
       setTimeout(() => { tempMultiplier = 1; tempBoostExpiry = 0; updateUI(); }, TEMP_BOOST_DURATION_MS);
     } else {
       alert("⚠️ لا توجد إعلانات متاحة. جرب لاحقاً.");
     }
-  } catch (e) { console.warn(e); alert("⚠️ خطأ. جرب مرة أخرى."); }
+  } catch (e) { alert("⚠️ خطأ. جرب مرة أخرى."); }
   finally { if (btn) btn.disabled = false; }
 }
 
 function startAdCooldownTicker() {
+  const stored = parseInt(localStorage.getItem('mha_last_ad') || '0');
+  if (stored && stored > lastAdWatchTime) lastAdWatchTime = stored;
+
   const cd = document.getElementById('ad-cooldown');
   const btn = document.getElementById('ad-btn');
   if (!cd || !btn) return;
@@ -259,7 +524,7 @@ function startAdCooldownTicker() {
 }
 
 // ==========================================
-// --- Three.js (Deep Sea - Silver Shark) ---
+// --- Three.js ---
 // ==========================================
 const container = document.getElementById('canvas-container');
 const scene = new THREE.Scene();
@@ -277,17 +542,16 @@ const light = new THREE.DirectionalLight(0x38bdf8, 1.8);
 light.position.set(5, 12, 10);
 scene.add(light);
 
-// ✅ الشبكة (أغمق لتبرز الشخصية)
 const grid = new THREE.GridHelper(100, 50, 0x0c4a6e, 0x082f49);
 grid.position.y = -1;
 scene.add(grid);
 
-// فقاعات المحيط
+// Bubbles
 const bubbleGeo = new THREE.BufferGeometry();
 const bubbleCount = 1000;
 const bubblePositions = new Float32Array(bubbleCount * 3);
 for (let i = 0; i < bubbleCount * 3; i += 3) {
-  bubblePositions[i] = (Math.random() - 0.5) * 100;
+  bubblePositions[i]     = (Math.random() - 0.5) * 100;
   bubblePositions[i + 1] = Math.random() * 40 - 5;
   bubblePositions[i + 2] = (Math.random() - 0.5) * 100;
 }
@@ -296,30 +560,16 @@ const bubbleMat = new THREE.PointsMaterial({ color: 0x38bdf8, size: 0.15, transp
 const bubbleField = new THREE.Points(bubbleGeo, bubbleMat);
 scene.add(bubbleField);
 
-// 🦈 القرش الفضي
+// Shark
 const sharkGroup = new THREE.Group();
 const bodyGeo = new THREE.ConeGeometry(0.6, 2, 8);
-// ✅ جسم القرش: فضي لامع + توهج سماوي
-const bodyMat = new THREE.MeshStandardMaterial({
-  color: 0xcbd5e1,
-  metalness: 0.9,
-  roughness: 0.2,
-  emissive: 0x38bdf8,
-  emissiveIntensity: 0.35
-});
+const bodyMat = new THREE.MeshStandardMaterial({ color: 0xcbd5e1, metalness: 0.9, roughness: 0.2, emissive: 0x38bdf8, emissiveIntensity: 0.35 });
 const sharkBody = new THREE.Mesh(bodyGeo, bodyMat);
 sharkBody.rotation.x = Math.PI / 2;
 sharkGroup.add(sharkBody);
 
 const finGeo = new THREE.ConeGeometry(0.4, 0.8, 4);
-// ✅ الزعنفة: فضي أفتح + توهج سماوي
-const finMat = new THREE.MeshStandardMaterial({
-  color: 0xe2e8f0,
-  metalness: 0.8,
-  roughness: 0.25,
-  emissive: 0x38bdf8,
-  emissiveIntensity: 0.25
-});
+const finMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, metalness: 0.8, roughness: 0.25, emissive: 0x38bdf8, emissiveIntensity: 0.25 });
 const sharkFin = new THREE.Mesh(finGeo, finMat);
 sharkFin.position.set(0, 0.6, 0.3);
 sharkFin.rotation.x = -Math.PI / 4;
@@ -328,23 +578,52 @@ sharkGroup.add(sharkFin);
 sharkGroup.position.set(0, 0, 4);
 scene.add(sharkGroup);
 
-// الكنوز (لآلئ)
+// Treasures
 const treasures = [];
 function spawnTreasure(isBig = false) {
+  if (isPaused) return;
   const size = isBig ? 1.2 : 0.4;
   const color = isBig ? 0xf59e0b : 0x38bdf8;
   const geo = new THREE.SphereGeometry(size, 16, 16);
   const mat = new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: 0.9 });
   const mesh = new THREE.Mesh(geo, mat);
   mesh.position.set((Math.random() - 0.5) * 16, 0, -30);
-  mesh.userData = { isBig, speed: 0.15 + Math.random() * 0.1, floatOffset: Math.random() * Math.PI };
+  mesh.userData = { isBig, speed: 0.15 + Math.random() * 0.1, floatOffset: Math.random() * Math.PI, type: 'pearl' };
   scene.add(mesh);
   treasures.push(mesh);
 }
-setInterval(() => spawnTreasure(false), 800);
-setInterval(() => spawnTreasure(true), 5000);
 
-// VFX
+// Gift Boxes
+function maybeSpawnGift() {
+  if (isPaused) return;
+  if (Math.random() > 0.6) return; // 40% chance
+  const geo = new THREE.BoxGeometry(1.4, 1.4, 1.4);
+  const mat = new THREE.MeshStandardMaterial({ color: 0xfbbf24, emissive: 0xf59e0b, emissiveIntensity: 0.7, metalness: 0.6, roughness: 0.3 });
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.position.set((Math.random() - 0.5) * 14, 0, -30);
+  mesh.userData = { type: 'gift', speed: 0.22, rot: 0.03 };
+  scene.add(mesh);
+  treasures.push(mesh);
+}
+
+// Power-ups
+function maybeSpawnPowerup() {
+  if (isPaused) return;
+  if (Math.random() > 0.7) return; // 30% chance
+  const type = Math.random() < 0.5 ? 'magnet' : 'x2';
+  const color = type === 'magnet' ? 0xf472b6 : 0xf59e0b;
+  const geo = new THREE.OctahedronGeometry(0.8, 0);
+  const mat = new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: 1.0, metalness: 0.7, roughness: 0.2 });
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.position.set((Math.random() - 0.5) * 14, 0, -30);
+  mesh.userData = { type: 'powerup', powerType: type, speed: 0.25, rot: 0.05 };
+  scene.add(mesh);
+  treasures.push(mesh);
+}
+
+startSpawners();
+
+// Particles
 const particles = [];
 function createBubbleBurst(position, colorHex) {
   const pCount = 15;
@@ -352,7 +631,7 @@ function createBubbleBurst(position, colorHex) {
   const positions = new Float32Array(pCount * 3);
   const velocities = [];
   for (let i = 0; i < pCount; i++) {
-    positions[i * 3] = position.x;
+    positions[i * 3]     = position.x;
     positions[i * 3 + 1] = position.y;
     positions[i * 3 + 2] = position.z;
     velocities.push({ x: (Math.random() - 0.5) * 0.3, y: (Math.random() - 0.5) * 0.3, z: (Math.random() - 0.5) * 0.3 });
@@ -369,6 +648,7 @@ camera.lookAt(0, 0, 0);
 
 let targetTilt = 0;
 function moveShark(dx, dz) {
+  if (isPaused) return;
   sharkGroup.position.x = Math.max(-8, Math.min(8, sharkGroup.position.x + dx));
   sharkGroup.position.z = Math.max(-2, Math.min(6, sharkGroup.position.z + dz));
   targetTilt = -dx * 0.6;
@@ -386,14 +666,23 @@ bindBtn('btn-down', 0, 0.5);
 bindBtn('btn-left', -0.5, 0);
 bindBtn('btn-right', 0.5, 0);
 
-function showFloatingText(text) {
+function showFloatingText(text, color) {
   const el = document.createElement('div');
   el.className = 'floating-text';
   el.innerText = text;
+  if (color) el.style.color = color;
   el.style.left = (window.innerWidth / 2) + 'px';
   el.style.top = (window.innerHeight / 2) + 'px';
   document.body.appendChild(el);
   setTimeout(() => el.remove(), 800);
+}
+
+function showCombo(n) {
+  const el = document.createElement('div');
+  el.className = 'combo-indicator';
+  el.innerText = '🔥 COMBO ×' + n;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 500);
 }
 
 window.addEventListener('resize', () => {
@@ -402,8 +691,94 @@ window.addEventListener('resize', () => {
   renderer.setSize(window.innerWidth, window.innerHeight);
 });
 
+// --- Biome update on level up ---
+function applyBiome(levelIndex) {
+  const biome = BIOMES[levelIndex] || BIOMES[1];
+  scene.background = new THREE.Color(biome.bg);
+  scene.fog.color.setHex(biome.fog);
+  bubbleMat.color.setHex(biome.bubble);
+}
+
+// --- Catch handler ---
+function onCatch(t) {
+  const now = Date.now();
+
+  // Combo
+  if (now - lastCatchTime < COMBO_WINDOW_MS) {
+    comboCount++;
+  } else {
+    comboCount = 1;
+  }
+  lastCatchTime = now;
+  if (comboCount === 5 || comboCount === 10) {
+    SoundManager.combo(comboCount);
+    showCombo(comboCount);
+  }
+
+  const eff = getEffectiveMultiplier();
+
+  if (t.userData.type === 'gift') {
+    // Random reward
+    const roll = Math.random();
+    let reward = 0;
+    if (roll < 0.5) reward = 10;
+    else if (roll < 0.8) reward = 50;
+    else if (roll < 0.95) reward = 100;
+    else reward = 250;
+    score += reward;
+    SoundManager.gift();
+    showFloatingText('🎁 +' + reward + ' MHA', '#fbbf24');
+    createBubbleBurst(t.position, 0xfbbf24);
+  } else if (t.userData.type === 'powerup') {
+    if (t.userData.powerType === 'magnet') {
+      magnetExpiry = now + POWERUP_DURATION_MS;
+      showFloatingText('🧲 مغناطيس مفعل!', '#f472b6');
+    } else {
+      x2Expiry = now + POWERUP_DURATION_MS;
+      showFloatingText('✨ مضاعف ×2!', '#f59e0b');
+    }
+    SoundManager.powerup();
+    createBubbleBurst(t.position, t.userData.powerType === 'magnet' ? 0xf472b6 : 0xf59e0b);
+  } else {
+    // Regular pearl
+    const reward = t.userData.isBig ? (1.0 * eff) : (0.01 * eff);
+    score += reward;
+    if (t.userData.isBig) {
+      SoundManager.bigBite();
+      showFloatingText('قضمة! +' + (1.0 * eff).toFixed(2) + ' MHA 🌟');
+      createBubbleBurst(t.position, 0xf59e0b);
+    } else {
+      SoundManager.smallBite();
+      createBubbleBurst(t.position, 0x38bdf8);
+    }
+  }
+
+  updateUI();
+  scheduleSave();
+
+  // Level up check
+  const newLevel = getLevel(score);
+  if (lastLevel && newLevel.min > lastLevel.min) {
+    const idx = LEVELS.indexOf(newLevel) + 1;
+    applyBiome(idx);
+    SoundManager.levelUp();
+    showFloatingText('🎉 ' + newLevel.icon + ' ' + newLevel.name + '!');
+    if (window.Telegram?.WebApp?.HapticFeedback) {
+      window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
+    }
+  }
+  lastLevel = newLevel;
+}
+
+// --- Animation loop ---
 function animate() {
   requestAnimationFrame(animate);
+
+  if (isPaused) {
+    renderer.render(scene, camera);
+    return;
+  }
+
   grid.position.z += 0.1;
   if (grid.position.z > 2) grid.position.z = 0;
 
@@ -417,13 +792,14 @@ function animate() {
   sharkGroup.rotation.z += (targetTilt - sharkGroup.rotation.z) * 0.1;
   targetTilt *= 0.9;
 
+  // Particles
   for (let i = particles.length - 1; i >= 0; i--) {
     const p = particles[i];
     p.life -= 0.04;
     p.system.material.opacity = p.life;
     const pp = p.system.geometry.attributes.position.array;
     for (let j = 0; j < p.velocities.length; j++) {
-      pp[j * 3] += p.velocities[j].x;
+      pp[j * 3]     += p.velocities[j].x;
       pp[j * 3 + 1] += p.velocities[j].y;
       pp[j * 3 + 2] += p.velocities[j].z;
     }
@@ -431,31 +807,34 @@ function animate() {
     if (p.life <= 0) { scene.remove(p.system); particles.splice(i, 1); }
   }
 
+  // Magnet active?
+  const magnetActive = Date.now() < magnetExpiry;
+
+  // Treasures
   for (let i = treasures.length - 1; i >= 0; i--) {
     const t = treasures[i];
     t.position.z += t.userData.speed;
-    t.rotation.x += 0.02;
-    t.rotation.y += 0.02;
+    t.rotation.x += t.userData.rot || 0.02;
+    t.rotation.y += t.userData.rot || 0.02;
+
     if (t.userData.isBig) t.position.y = Math.sin(Date.now() * 0.005 + t.userData.floatOffset) * 0.3;
+    if (t.userData.type === 'gift') t.position.y = Math.sin(Date.now() * 0.003) * 0.4;
+
+    // Magnet effect
+    if (magnetActive && t.userData.type === 'pearl') {
+      const dx = sharkGroup.position.x - t.position.x;
+      const dy = sharkGroup.position.y - t.position.y;
+      const dz = sharkGroup.position.z - t.position.z;
+      const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+      if (dist < 9 && dist > 0.5) {
+        t.position.x += dx / dist * 0.15;
+        t.position.y += dy / dist * 0.15;
+        t.position.z += dz / dist * 0.15;
+      }
+    }
 
     if (sharkGroup.position.distanceTo(t.position) < 1.2) {
-      const eff = getEffectiveMultiplier();
-      const reward = t.userData.isBig ? (1.0 * eff) : (0.01 * eff);
-      score += reward;
-      createBubbleBurst(t.position, t.userData.isBig ? 0xf59e0b : 0x38bdf8);
-      if (t.userData.isBig) showFloatingText('قضمة! +' + (1.0 * eff).toFixed(2) + ' MHA 🌟');
-      updateUI();
-      saveToFirebase();
-
-      const newLevel = getLevel(score);
-      if (lastLevel && newLevel.min > lastLevel.min) {
-        showFloatingText('🎉 ' + newLevel.icon + ' ' + newLevel.name + '!');
-        if (window.Telegram?.WebApp?.HapticFeedback) {
-          window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
-        }
-      }
-      lastLevel = newLevel;
-
+      onCatch(t);
       scene.remove(t);
       treasures.splice(i, 1);
       continue;
@@ -463,7 +842,32 @@ function animate() {
     if (t.position.z > 8) { scene.remove(t); treasures.splice(i, 1); }
   }
 
-  if (Date.now() % 1000 < 20) updateUI();
   renderer.render(scene, camera);
 }
 animate();
+
+// UI tick (fixed, not tied to frame rate)
+uiInterval = setInterval(() => {
+  if (!isPaused) updateUI();
+}, 500);
+
+// Initialize mute button state
+(function initMuteBtn() {
+  const btn = document.getElementById('mute-btn');
+  if (btn && SoundManager.isMuted()) {
+    btn.innerText = '🔇';
+    btn.classList.add('muted');
+  }
+})();
+
+// Save on unload
+window.addEventListener('beforeunload', () => { if (!isPaused) saveToFirebase(); });
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden && !isPaused) {
+    togglePause();
+    saveToFirebase();
+  }
+});
+
+// Set initial level reference
+setTimeout(() => { lastLevel = getLevel(score); }, 1500);
