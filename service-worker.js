@@ -1,6 +1,6 @@
 /* ==========================================
    Service Worker - MHASpace PWA
-   Cache v4 (added sound.js)
+   Cache v5 (added i18n.js)
    ========================================== */
 
 const CACHE = 'mha-v5';
@@ -10,8 +10,8 @@ const ASSETS = [
   '/manifest.json',
   '/mha-logo.png',
   '/app.js',
-  '/sound.js'
-   '/i18n.js'
+  '/sound.js',
+  '/i18n.js'
 ];
 
 // --- Install: cache core assets ---
@@ -45,7 +45,7 @@ self.addEventListener('fetch', (e) => {
   // Skip external fonts
   if (url.hostname.includes('fonts.googleapis.com') ||
       url.hostname.includes('fonts.gstatic.com')) return;
-  // Skip third-party SDKs (Telegram, Adsgram, Three.js, Firebase, Monetag)
+  // Skip third-party SDKs
   if (url.hostname.includes('telegram.org') ||
       url.hostname.includes('adsgram.ai') ||
       url.hostname.includes('cdnjs.cloudflare.com') ||
