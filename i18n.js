@@ -1,5 +1,6 @@
 /* ==========================================
    MHASpace i18n - Multilingual (EN default, AR alt)
+   Levels: Drop → Bronze → Silver → Gold → Platinum → Diamond
    ========================================== */
 
 const I18N = {
@@ -19,9 +20,12 @@ const I18N = {
     btnPause: "Pause",
 
     // Levels
-    levelDrop: "Drop", levelStream: "Stream", levelRiver: "River",
-    levelLake: "Lake", levelSea: "Sea", levelOcean: "Ocean",
-    levelDepths: "Depths", levelLegend: "Legend",
+    levelDrop:     "Drop",
+    levelBronze:   "Bronze",
+    levelSilver:   "Silver",
+    levelGold:     "Gold",
+    levelPlatinum: "Platinum",
+    levelDiamond:  "Diamond",
     progressNext: "Progress to next level",
     maxLevel: "Max Level!",
 
@@ -40,8 +44,6 @@ const I18N = {
     storeSub: "Support the project and unlock exclusive features ⭐",
     storeClose: "Close",
     priceLabel: "⭐ Star",
-    defaultProductTitle: "Product",
-    defaultProductDesc: "",
 
     // Products
     prod_magnet_60: "🧲 Magnet (60s)",
@@ -60,8 +62,6 @@ const I18N = {
     prod_box_magnet5_desc: "Get 5 magnets instantly",
     prod_box_mixed: "🎁 Mixed Bundle",
     prod_box_mixed_desc: "Magnet + x2 + Shield",
-    prod_pass_monthly: "👑 Shark Pass (Month)",
-    prod_pass_monthly_desc: "Premium features for 30 days",
 
     // Payment
     payLoading: "Opening invoice...",
@@ -79,7 +79,6 @@ const I18N = {
     purchaseShield: "🛡️ +1 Combo Shield added!",
     purchaseMagnet5: "📦 +5 Magnets added!",
     purchaseMixed: "🎁 Bundle: Magnet + x2 + Shield!",
-    purchasePass: "👑 Shark Pass activated for 30 days!",
 
     // Tutorial
     tutTitle: "Welcome to MHASpace!",
@@ -121,9 +120,12 @@ const I18N = {
     btnPause: "إيقاف",
 
     // Levels
-    levelDrop: "قطرة", levelStream: "جدول", levelRiver: "نهر",
-    levelLake: "بحيرة", levelSea: "بحر", levelOcean: "محيط",
-    levelDepths: "أعماق", levelLegend: "أسطورة",
+    levelDrop:     "قطرة",
+    levelBronze:   "برونزي",
+    levelSilver:   "فضي",
+    levelGold:     "ذهبي",
+    levelPlatinum: "بلاتيني",
+    levelDiamond:  "ماسي",
     progressNext: "التقدم للمستوى التالي",
     maxLevel: "أعلى مستوى!",
 
@@ -160,8 +162,6 @@ const I18N = {
     prod_box_magnet5_desc: "احصل على 5 مغانط فوراً",
     prod_box_mixed: "🎁 صندوق مختلط",
     prod_box_mixed_desc: "مغناطيس + مضاعف + درع",
-    prod_pass_monthly: "👑 Shark Pass (شهر)",
-    prod_pass_monthly_desc: "مزايا حصرية لمدة 30 يوم",
 
     // Payment
     payLoading: "جاري فتح الفاتورة...",
@@ -179,7 +179,6 @@ const I18N = {
     purchaseShield: "🛡️ +1 درع Combo!",
     purchaseMagnet5: "📦 +5 مغانط في الجرد!",
     purchaseMixed: "🎁 حزمة: مغناطيس + ×2 + درع!",
-    purchasePass: "👑 تم تفعيل Shark Pass لـ 30 يوم!",
 
     // Tutorial
     tutTitle: "مرحباً في MHASpace!",
