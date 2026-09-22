@@ -1,6 +1,7 @@
 /* ==========================================
-   MHASpace Worker v3 - Full
+   MHASpace Worker v4 - Full
    Products + Powerups + Boxes + i18n
+   (Shark Pass removed)
    ========================================== */
 
 const FIREBASE = 'https://mhaexplorer-ac7a7-default-rtdb.europe-west1.firebasedatabase.app';
@@ -18,7 +19,7 @@ const PRODUCTS = {
   'box_bronze':   { price: 5,  type: 'box', value: { min: 100,  max: 500 },
                     title: { en: '💎 Bronze Box', ar: '💎 صندوق برونزي' },
                     desc:  { en: 'Random 100 - 500 MHA', ar: 'عشوائي 100 - 500 MHA' } },
-  'box_silver':   { price: 10,  type: 'box', value: { min: 500,  max: 1500 },
+  'box_silver':   { price: 10, type: 'box', value: { min: 500,  max: 1500 },
                     title: { en: '💠 Silver Box', ar: '💠 صندوق فضي' },
                     desc:  { en: 'Random 500 - 1500 MHA', ar: 'عشوائي 500 - 1500 MHA' } },
   'box_gold':     { price: 25, type: 'box', value: { min: 2000, max: 8000 },
@@ -29,10 +30,7 @@ const PRODUCTS = {
                     desc:  { en: 'Get 5 magnets instantly', ar: 'احصل على 5 مغانط فوراً' } },
   'box_mixed':    { price: 10, type: 'bundle', value: 'mixed',
                     title: { en: '🎁 Mixed Bundle', ar: '🎁 صندوق مختلط' },
-                    desc:  { en: 'Magnet + x2 + Shield', ar: 'مغناطيس + مضاعف + درع' } },
-  'pass_monthly': { price: 50, type: 'pass', value: 30,
-                    title: { en: '👑 Shark Pass (Month)', ar: '👑 Shark Pass (شهر)' },
-                    desc:  { en: 'Premium features for 30 days', ar: 'مزايا حصرية لمدة 30 يوم' } }
+                    desc:  { en: 'Magnet + x2 + Shield', ar: 'مغناطيس + مضاعف + درع' } }
 };
 
 export default {
@@ -200,12 +198,11 @@ async function handleWebhook(request, env) {
   }
 }
 
-// --- Apply Product (فوري بعد الدفع) ---
+// --- Apply Product ---
 async function applyProduct(env, userId, product, productId) {
   const base = `${FIREBASE}/players/${userId}`;
   const now  = Date.now();
 
-  // Read current data (score + powerups)
   const snap = await fetch(`${base}.json`).then(r => r.json()).catch(() => null) || {};
   const currentScore = (typeof snap.score === 'number') ? snap.score : 0;
   const powerups = snap.powerups || {};
@@ -290,7 +287,7 @@ async function applyProduct(env, userId, product, productId) {
     lastPurchase = { type: 'bundle', bundle: 'mixed' };
   }
 
-  // ================= PASS =================
+  // ================= PASS (legacy, unused) =================
   else if (product.type === 'pass') {
     const expiry = now + product.value * 24 * 60 * 60 * 1000;
     await fetch(`${base}/pass.json`, {
@@ -400,4 +397,4 @@ async function handleReward(request, env) {
   } catch (e) {
     return new Response('OK', { status: 200 });
   }
-}
+       }
