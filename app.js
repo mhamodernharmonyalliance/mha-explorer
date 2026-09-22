@@ -1,8 +1,8 @@
 /* ==========================================
-   MHASpace v3 - Silver Shark Edition
+   MHASpace v4 - Silver Shark Edition
    Firebase + Adsgram + Levels + Combo
-   + i18n + Store (Powerups + Boxes) + Daily
-   No Leaderboard (removed)
+   + i18n + Store (Powerups + Boxes)
+   Levels: Drop → Bronze → Silver → Gold → Platinum → Diamond
    ========================================== */
 
 // --- Firebase ---
@@ -49,7 +49,7 @@ let shieldExpiry = 0;
 let magnetExpiry = 0;
 let x2Expiry = 0;
 
-// Inventory (from Firebase)
+// Inventory
 let inventory = { magnet: 0, x2: 0, shield: 0 };
 
 // Timers
@@ -79,25 +79,21 @@ const TUTORIAL_KEY = 'mha_tutorial_done';
 
 // --- Levels & Biomes ---
 const LEVELS = [
-  { min: 0,       key: 'levelDrop',   icon: "💧", class: "level-1" },
-  { min: 100000,  key: 'levelStream', icon: "🌊", class: "level-2" },
-  { min: 200000,  key: 'levelRiver',  icon: "🏞️", class: "level-3" },
-  { min: 300000,  key: 'levelLake',   icon: "🌅", class: "level-4" },
-  { min: 500000,  key: 'levelSea',    icon: "🌊", class: "level-5" },
-  { min: 1000000, key: 'levelOcean',  icon: "🐋", class: "level-6" },
-  { min: 2000000, key: 'levelDepths', icon: "🦈", class: "level-7" },
-  { min: 5000000, key: 'levelLegend', icon: "👑", class: "level-8" }
+  { min: 0,      key: 'levelDrop',     icon: "💧", class: "level-1" },
+  { min: 20000,  key: 'levelBronze',   icon: "🥉", class: "level-2" },
+  { min: 40000,  key: 'levelSilver',   icon: "🥈", class: "level-3" },
+  { min: 60000,  key: 'levelGold',     icon: "🥇", class: "level-4" },
+  { min: 80000,  key: 'levelPlatinum', icon: "💠", class: "level-5" },
+  { min: 100000, key: 'levelDiamond',  icon: "💎", class: "level-6" }
 ];
 
 const BIOMES = {
-  1: { bg: 0x020617, fog: 0x020617, bubble: 0x38bdf8 },
-  2: { bg: 0x041e2e, fog: 0x041e2e, bubble: 0x22d3ee },
-  3: { bg: 0x062e2e, fog: 0x062e2e, bubble: 0x10b981 },
-  4: { bg: 0x0a2f1f, fog: 0x0a2f1f, bubble: 0x4ade80 },
-  5: { bg: 0x0a1e3d, fog: 0x0a1e3d, bubble: 0x60a5fa },
-  6: { bg: 0x1a0f3d, fog: 0x1a0f3d, bubble: 0xa78bfa },
-  7: { bg: 0x3d0a1a, fog: 0x3d0a1a, bubble: 0xf87171 },
-  8: { bg: 0x3d2a05, fog: 0x3d2a05, bubble: 0xfbbf24 }
+  1: { bg: 0x020617, fog: 0x020617, bubble: 0x38bdf8 },  // Drop
+  2: { bg: 0x2a1810, fog: 0x2a1810, bubble: 0xcd7f32 },  // Bronze
+  3: { bg: 0x1a1a1a, fog: 0x1a1a1a, bubble: 0xc0c0c0 },  // Silver
+  4: { bg: 0x2a1f05, fog: 0x2a1f05, bubble: 0xffd700 },  // Gold
+  5: { bg: 0x0a1e2a, fog: 0x0a1e2a, bubble: 0xe5e4e2 },  // Platinum
+  6: { bg: 0x1a0a2e, fog: 0x1a0a2e, bubble: 0xa78bfa }   // Diamond
 };
 
 function getLevel(s) {
@@ -220,13 +216,11 @@ async function loadUserData() {
     if (data) {
       score = typeof data.score === 'number' ? data.score : 0;
       lastDailyClaim = data.lastDailyClaim || 0;
-      // Load inventory
       if (data.powerups && typeof data.powerups === 'object') {
         inventory.magnet = data.powerups.magnet || 0;
         inventory.x2 = data.powerups.x2 || 0;
         inventory.shield = data.powerups.shield || 0;
       }
-      // Check last purchase to show reward
       if (data.lastPurchase && !data.lastPurchase.shown) {
         showPurchaseReward(data.lastPurchase, userId);
       }
@@ -275,7 +269,6 @@ function checkPendingReferralBonuses(userId) {
 
 // --- Show Purchase Reward ---
 function showPurchaseReward(purchase, userId) {
-  // Mark as shown
   db.ref('players/' + userId + '/lastPurchase/shown').set(true);
 
   let title = '';
@@ -300,16 +293,12 @@ function showPurchaseReward(purchase, userId) {
   } else if (purchase.type === 'bundle') {
     emoji = '🎁';
     title = t('purchaseMixed');
-  } else if (purchase.type === 'pass') {
-    emoji = '👑';
-    title = t('purchasePass');
   } else if (purchase.type === 'score') {
     emoji = '💎';
     title = t('purchaseBox', { n: purchase.reward });
     bigValue = '+' + purchase.reward + ' MHA';
   }
 
-  // Show modal
   const modal = document.createElement('div');
   modal.className = 'modal-overlay active';
   modal.innerHTML = `
@@ -323,7 +312,6 @@ function showPurchaseReward(purchase, userId) {
   document.body.appendChild(modal);
   SoundManager.gift();
 
-  // Reload score/inventory after 1s
   setTimeout(() => {
     db.ref('players/' + userId).once('value').then(s => {
       const d = s.val();
@@ -449,7 +437,6 @@ function updatePowerupBar() {
     const s = Math.ceil((shieldExpiry - now) / 1000);
     html += `<div class="powerup-chip">🛡️ ${s}s</div>`;
   }
-  // Show inventory counts
   const inv = [];
   if (inventory.magnet > 0) inv.push(`🧲×${inventory.magnet}`);
   if (inventory.x2 > 0)     inv.push(`⚡×${inventory.x2}`);
@@ -921,21 +908,18 @@ const STORE_ITEMS = [
   { id: 'box_silver' },
   { id: 'box_gold' },
   { id: 'box_magnet5' },
-  { id: 'box_mixed' },
-  { id: 'pass_monthly' }
+  { id: 'box_mixed' }
 ];
 
-// Product metadata (title/desc keys + price for display)
 const STORE_META = {
   'magnet_60':    { icon: '🧲', titleKey: 'prod_magnet_60',    descKey: 'prod_magnet_60_desc',    price: 2  },
   'boost_x2':     { icon: '⚡', titleKey: 'prod_boost_x2',     descKey: 'prod_boost_x2_desc',     price: 2  },
   'shield_combo': { icon: '🛡️', titleKey: 'prod_shield_combo', descKey: 'prod_shield_combo_desc', price: 5  },
   'box_bronze':   { icon: '💎', titleKey: 'prod_box_bronze',   descKey: 'prod_box_bronze_desc',   price: 5  },
-  'box_silver':   { icon: '💠', titleKey: 'prod_box_silver',   descKey: 'prod_box_silver_desc',   price: 10  },
+  'box_silver':   { icon: '💠', titleKey: 'prod_box_silver',   descKey: 'prod_box_silver_desc',   price: 10 },
   'box_gold':     { icon: '👑', titleKey: 'prod_box_gold',     descKey: 'prod_box_gold_desc',     price: 25 },
   'box_magnet5':  { icon: '📦', titleKey: 'prod_box_magnet5',  descKey: 'prod_box_magnet5_desc',  price: 5  },
-  'box_mixed':    { icon: '🎁', titleKey: 'prod_box_mixed',    descKey: 'prod_box_mixed_desc',    price: 10 },
-  'pass_monthly': { icon: '👑', titleKey: 'prod_pass_monthly', descKey: 'prod_pass_monthly_desc', price: 50 }
+  'box_mixed':    { icon: '🎁', titleKey: 'prod_box_mixed',    descKey: 'prod_box_mixed_desc',    price: 10 }
 };
 
 function renderStore() {
@@ -1013,4 +997,4 @@ async function buyProduct(productId) {
     if (payModal) payModal.classList.remove('active');
     alert(t('payNetErr'));
   }
-}
+             }
