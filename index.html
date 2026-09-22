@@ -29,16 +29,14 @@
     .hud-actions { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
     .level-badge { display: flex; align-items: center; gap: 5px; padding: 5px 10px; border-radius: 20px; font-size: 12px; font-weight: bold; border: 2px solid; white-space: nowrap; }
     .level-badge .icon { font-size: 15px; }
-    .level-1 { background: rgba(205,127,50,0.2);  border-color: #cd7f32; color: #ffb976; }
-    .level-2 { background: rgba(192,192,192,0.2); border-color: #c0c0c0; color: #e8e8e8; }
-    .level-3 { background: rgba(255,215,0,0.2);   border-color: #ffd700; color: #ffe97a; }
-    .level-4 { background: rgba(16,185,129,0.2);  border-color: #10b981; color: #4ade80; }
-    .level-5 { background: rgba(56,189,248,0.2);  border-color: #38bdf8; color: #7dd3fc; }
-    .level-6 { background: rgba(59,130,246,0.2);  border-color: #3b82f6; color: #93c5fd; }
-    .level-7 { background: rgba(139,92,246,0.2);  border-color: #8b5cf6; color: #c4b5fd; animation: diamondPulse 1.5s infinite; }
-    .level-8 { background: rgba(239,68,68,0.2);   border-color: #ef4444; color: #fca5a5; animation: diamondPulse 1.5s infinite; }
-    @keyframes diamondPulse { 0%,100% { box-shadow: 0 0 10px rgba(139,92,246,0.5); } 50% { box-shadow: 0 0 20px rgba(139,92,246,0.9); } }
-
+   .level-1 { background: rgba(56,189,248,0.2);  border-color: #38bdf8; color: #7dd3fc; }
+.level-2 { background: rgba(205,127,50,0.2);  border-color: #cd7f32; color: #ffb976; }
+.level-3 { background: rgba(192,192,192,0.2); border-color: #c0c0c0; color: #e8e8e8; }
+.level-4 { background: rgba(255,215,0,0.2);   border-color: #ffd700; color: #ffe97a; }
+.level-5 { background: rgba(229,228,226,0.2); border-color: #e5e4e2; color: #ffffff; animation: platinumPulse 2s infinite; }
+.level-6 { background: rgba(167,139,250,0.2); border-color: #a78bfa; color: #c4b5fd; animation: diamondPulse 1.5s infinite; }
+@keyframes platinumPulse { 0%,100% { box-shadow: 0 0 8px rgba(229,228,226,0.5); } 50% { box-shadow: 0 0 15px rgba(229,228,226,0.9); } }
+@keyframes diamondPulse  { 0%,100% { box-shadow: 0 0 10px rgba(167,139,250,0.5); } 50% { box-shadow: 0 0 20px rgba(167,139,250,0.9); } }
     .icon-btn { width: 34px; height: 34px; border-radius: 50%; background: rgba(56,189,248,0.15); border: 1px solid #38bdf8; color: #38bdf8; font-size: 14px; display: flex; justify-content: center; align-items: center; cursor: pointer; touch-action: manipulation; transition: transform 0.15s, background 0.2s; padding: 0; }
     .icon-btn:active { transform: scale(0.9); background: rgba(56,189,248,0.4); }
     .icon-btn.is-active { background: rgba(16,185,129,0.2); border-color: #10b981; color: #4ade80; }
