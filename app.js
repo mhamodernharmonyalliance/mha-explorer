@@ -929,9 +929,9 @@ const STORE_ITEMS = [
 const STORE_META = {
   'magnet_60':    { icon: '🧲', titleKey: 'prod_magnet_60',    descKey: 'prod_magnet_60_desc',    price: 2  },
   'boost_x2':     { icon: '⚡', titleKey: 'prod_boost_x2',     descKey: 'prod_boost_x2_desc',     price: 2  },
-  'shield_combo': { icon: '🛡️', titleKey: 'prod_shield_combo', descKey: 'prod_shield_combo_desc', price: 3  },
-  'box_bronze':   { icon: '💎', titleKey: 'prod_box_bronze',   descKey: 'prod_box_bronze_desc',   price: 3  },
-  'box_silver':   { icon: '💠', titleKey: 'prod_box_silver',   descKey: 'prod_box_silver_desc',   price: 8  },
+  'shield_combo': { icon: '🛡️', titleKey: 'prod_shield_combo', descKey: 'prod_shield_combo_desc', price: 5  },
+  'box_bronze':   { icon: '💎', titleKey: 'prod_box_bronze',   descKey: 'prod_box_bronze_desc',   price: 5  },
+  'box_silver':   { icon: '💠', titleKey: 'prod_box_silver',   descKey: 'prod_box_silver_desc',   price: 10  },
   'box_gold':     { icon: '👑', titleKey: 'prod_box_gold',     descKey: 'prod_box_gold_desc',     price: 25 },
   'box_magnet5':  { icon: '📦', titleKey: 'prod_box_magnet5',  descKey: 'prod_box_magnet5_desc',  price: 5  },
   'box_mixed':    { icon: '🎁', titleKey: 'prod_box_mixed',    descKey: 'prod_box_mixed_desc',    price: 10 },
