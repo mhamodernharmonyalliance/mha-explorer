@@ -121,7 +121,7 @@ let adsgramReady = false;
 function initAdsgram() {
   if (typeof window.Adsgram === 'undefined') return false;
   try {
-    AdController = window.Adsgram.init({ blockId: "48760" });
+    AdController = window.Adsgram.init({ blockId: "49526" });
     adsgramReady = true;
     return true;
   } catch (e) { return false; }
