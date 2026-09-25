@@ -67,16 +67,15 @@ const TUTORIAL_KEY = 'mha_tutorial_done';
   } catch (e) { console.warn('Telegram init:', e); }
 })();
 
-// --- Levels & Shark Colors ---
 const LEVELS = [
-  { min: 0,     key: 'levelDrop',     icon: "💧", class: "level-1", shark: 'silver'   },
-  { min: 20000, key: 'levelBronze',   icon: "🥉", class: "level-2", shark: 'bronze'   },
-  { min: 38000, key: 'levelPlatinum', icon: "🥈", class: "level-3", shark: 'platinum' },
-  { min: 54000, key: 'levelGold',     icon: "🥇", class: "level-4", shark: 'gold'     },
-  { min: 68000, key: 'levelEmerald',  icon: "💚", class: "level-5", shark: 'emerald'  },
-  { min: 80000, key: 'levelSapphire', icon: "💙", class: "level-6", shark: 'sapphire' },
-  { min: 90000, key: 'levelAmethyst', icon: "💜", class: "level-7", shark: 'amethyst' },
-  { min: 98000, key: 'levelDiamond',  icon: "💎", class: "level-8", shark: 'diamond'  }
+  { min: 0,      key: 'levelDrop',     icon: "💧", class: "level-1", shark: 'silver'   },
+  { min: 30000,  key: 'levelBronze',   icon: "🥉", class: "level-2", shark: 'bronze'   },
+  { min: 58000,  key: 'levelPlatinum', icon: "🥈", class: "level-3", shark: 'platinum' },
+  { min: 84000,  key: 'levelGold',     icon: "🥇", class: "level-4", shark: 'gold'     },
+  { min: 108000, key: 'levelEmerald',  icon: "💚", class: "level-5", shark: 'emerald'  },
+  { min: 130000, key: 'levelSapphire', icon: "💙", class: "level-6", shark: 'sapphire' },
+  { min: 150000, key: 'levelAmethyst', icon: "💜", class: "level-7", shark: 'amethyst' },
+  { min: 168000, key: 'levelDiamond',  icon: "💎", class: "level-8", shark: 'diamond'  }
 ];
 
 const BIOMES = {
