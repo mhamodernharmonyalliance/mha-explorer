@@ -1,6 +1,6 @@
 /* ==========================================
-   MHASpace v5 - Economic Redesign
-   8 Levels + Shark Colors + Star Packs
+   MHASpace v6 - Adexora Edition
+   8 Levels + Shark Colors + Star Packs + Adexora
    ========================================== */
 
 // --- Firebase ---
@@ -25,6 +25,7 @@ const DAILY_REWARD = 50;
 const SAVE_THROTTLE_MS = 5000;
 const COMBO_WINDOW_MS = 2000;
 const POWERUP_DURATION_MS = 30 * 1000;
+const SHIELD_DURATION_MS = 5 * 60 * 1000;
 
 // --- State ---
 let score = 0.00;
@@ -37,23 +38,34 @@ let lastAdWatchTime = 0;
 let lastSaveTime = 0;
 let saveTimer = null;
 
+// Combo
 let comboCount = 0;
 let lastCatchTime = 0;
 let shieldExpiry = 0;
+
+// Power-ups
 let magnetExpiry = 0;
 let x2Expiry = 0;
 let x5Expiry = 0;
 
+// Inventory
 let inventory = { magnet: 0, x2: 0, shield: 0 };
 
+// Timers
 let treasureSpawnInterval = null;
 let bigTreasureSpawnInterval = null;
 let giftSpawnInterval = null;
 let powerupSpawnInterval = null;
 let uiInterval = null;
 
+// Daily
 let lastDailyClaim = 0;
+
+// Tutorial
 const TUTORIAL_KEY = 'mha_tutorial_done';
+
+// --- Adexora State ---
+let adexoraReady = false;
 
 // --- Telegram Init ---
 (function initTelegram() {
@@ -67,6 +79,7 @@ const TUTORIAL_KEY = 'mha_tutorial_done';
   } catch (e) { console.warn('Telegram init:', e); }
 })();
 
+// --- Levels & Shark Colors ---
 const LEVELS = [
   { min: 0,      key: 'levelDrop',     icon: "💧", class: "level-1", shark: 'silver'   },
   { min: 30000,  key: 'levelBronze',   icon: "🥉", class: "level-2", shark: 'bronze'   },
@@ -115,26 +128,27 @@ function formatNum(n) {
   return Math.floor(n).toString();
 }
 
-// --- Adsgram ---
-let AdController = null;
-let adsgramReady = false;
-function initAdsgram() {
-  if (typeof window.Adsgram === 'undefined') return false;
-  try {
-    AdController = window.Adsgram.init({ blockId: "0" });
-    adsgramReady = true;
+// ==========================================
+// 🎬 Adexora — فحص الجاهزية
+// ==========================================
+function checkAdexoraReady() {
+  if (typeof window.showAdexora === 'function') {
+    adexoraReady = true;
+    console.log('✅ Adexora ready');
     return true;
-  } catch (e) { return false; }
-}
-setTimeout(initAdsgram, 2000);
-
-async function showRewardedAd() {
-  if (adsgramReady && AdController) {
-    try { await AdController.show(); return { success: true }; }
-    catch (e) { console.warn('Adsgram failed:', e); }
   }
-  return { success: false };
+  return false;
 }
+
+// فحص كل ثانية حتى يجهز
+let adexoraCheckInterval = setInterval(() => {
+  if (checkAdexoraReady()) {
+    clearInterval(adexoraCheckInterval);
+  }
+}, 1000);
+
+// فحص أولي بعد 3 ثوان
+setTimeout(checkAdexoraReady, 3000);
 
 // --- User ---
 function getUserId() {
@@ -503,9 +517,13 @@ window.addEventListener('keydown', (e) => {
   }
 });
 
-// --- Ads ---
+// ==========================================
+// 🎬 Ads — Adexora Rewarded Video
+// ==========================================
 async function watchTimedAd() {
   if (isPaused) return;
+
+  // ⏳ فحص الـ Cooldown
   const now = Date.now();
   if (now - lastAdWatchTime < AD_COOLDOWN_MS) {
     const r = AD_COOLDOWN_MS - (now - lastAdWatchTime);
@@ -513,24 +531,43 @@ async function watchTimedAd() {
     alert(`${t('adWait')} ${m}:${s.toString().padStart(2, '0')} ${t('adBefore')}`);
     return;
   }
+
+  // 🎬 فحص جاهزية Adexora
+  if (typeof window.showAdexora !== 'function') {
+    alert(t('adNoAds'));
+    return;
+  }
+
   const btn = document.getElementById('ad-btn');
   if (btn) btn.disabled = true;
+
   try {
-    const result = await showRewardedAd();
-    if (result.success) {
-      lastAdWatchTime = Date.now();
-      localStorage.setItem('mha_last_ad', lastAdWatchTime.toString());
-      tempMultiplier = AD_BOOST_MULTIPLIER;
-      tempBoostExpiry = Date.now() + TEMP_BOOST_DURATION_MS;
+    // 🎬 عرض إعلان Adexora
+    await window.showAdexora();
+
+    // ✅ نجح — امنح المكافأة
+    lastAdWatchTime = Date.now();
+    localStorage.setItem('mha_last_ad', lastAdWatchTime.toString());
+
+    tempMultiplier = AD_BOOST_MULTIPLIER;
+    tempBoostExpiry = Date.now() + TEMP_BOOST_DURATION_MS;
+    updateUI();
+    SoundManager.powerup();
+
+    alert(t('adBoost'));
+
+    setTimeout(() => {
+      tempMultiplier = 1;
+      tempBoostExpiry = 0;
       updateUI();
-      SoundManager.powerup();
-      alert(t('adBoost'));
-      setTimeout(() => { tempMultiplier = 1; tempBoostExpiry = 0; updateUI(); }, TEMP_BOOST_DURATION_MS);
-    } else {
-      alert(t('adNoAds'));
-    }
-  } catch (e) { alert(t('adError')); }
-  finally { if (btn) btn.disabled = false; }
+    }, TEMP_BOOST_DURATION_MS);
+
+  } catch (e) {
+    console.warn('Adexora error:', e);
+    alert(t('adError'));
+  } finally {
+    if (btn) btn.disabled = false;
+  }
 }
 
 function startAdCooldownTicker() {
@@ -795,7 +832,7 @@ function onCatch(t) {
   if (lastLevel && newLevel.min > lastLevel.min) {
     const idx = LEVELS.indexOf(newLevel) + 1;
     applyBiome(idx);
-    updateSharkColor(newLevel.key);  // 🎨 تغيير لون القرش
+    updateSharkColor(newLevel.key);
     SoundManager.levelUp();
     showFloatingText('🎉 ' + newLevel.icon + ' ' + t(newLevel.key) + '!');
     if (window.Telegram?.WebApp?.HapticFeedback) {
@@ -996,4 +1033,4 @@ async function buyProduct(productId) {
     if (payModal) payModal.classList.remove('active');
     alert(t('payNetErr'));
   }
-}
+                         }
