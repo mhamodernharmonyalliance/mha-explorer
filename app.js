@@ -17,6 +17,7 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
 // --- Constants ---
+// --- Constants ---
 const TEMP_BOOST_DURATION_MS = 90 * 1000;
 const AD_COOLDOWN_MS = 3 * 60 * 1000;
 const AD_BOOST_MULTIPLIER = 3;
@@ -27,6 +28,11 @@ const COMBO_WINDOW_MS = 2000;
 const POWERUP_DURATION_MS = 30 * 1000;
 const SHIELD_DURATION_MS = 5 * 60 * 1000;
 
+// 🎬 Pause Ad — إعلان تلقائي عند الإيقاف المؤقت
+const PAUSE_AD_COOLDOWN_MS = 3 * 60 * 1000;  // كل 3 دقائق
+const PAUSE_AD_REWARD = 25;                   // 25 MHA لكل إعلان
+
+// --- State ---
 // --- State ---
 let score = 0.00;
 let tempMultiplier = 1;
@@ -37,6 +43,7 @@ let isPaused = false;
 let lastAdWatchTime = 0;
 let lastSaveTime = 0;
 let saveTimer = null;
+let lastPauseAdTime = 0;  // 🎬 آخر وقت لإعلان Pause
 
 // Combo
 let comboCount = 0;
@@ -477,23 +484,92 @@ function getEffectiveMultiplier() {
 }
 
 // --- Pause ---
+// --- Pause (with Auto Ad) ---
 function togglePause() {
-  isPaused = !isPaused;
   const overlay = document.getElementById('pause-overlay');
   const btn = document.getElementById('pause-btn');
+
+  // === حالة الاستئناف ===
   if (isPaused) {
-    stopSpawners();
-    overlay?.classList.add('active');
-    if (btn) { btn.innerText = '▶️'; btn.classList.add('is-active'); }
-  } else {
+    isPaused = false;
     startSpawners();
     overlay?.classList.remove('active');
     if (btn) { btn.innerText = '⏸️'; btn.classList.remove('is-active'); }
+    SoundManager.click();
+    if (window.Telegram?.WebApp?.HapticFeedback) {
+      window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
+    }
+    return;
   }
+
+  // === حالة الإيقاف المؤقت ===
+  isPaused = true;
+  stopSpawners();
+  if (btn) { btn.innerText = '▶️'; btn.classList.add('is-active'); }
   SoundManager.click();
   if (window.Telegram?.WebApp?.HapticFeedback) {
     window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
   }
+
+  // 🎬 فحص إمكانية عرض الإعلان
+  const now = Date.now();
+  const stored = parseInt(localStorage.getItem('mha_last_pause_ad') || '0');
+  if (stored > lastPauseAdTime) lastPauseAdTime = stored;
+
+  const canShowAd = (now - lastPauseAdTime) >= PAUSE_AD_COOLDOWN_MS;
+  const adexoraReady = typeof window.showAdexora === 'function';
+
+  // ✅ الحالة 1: يمكن عرض الإعلان + Adexora جاهز
+  if (canShowAd && adexoraReady) {
+    // اعرض شاشة إيقاف مؤقتاً مع رسالة "جاري تحميل الإعلان"
+    if (overlay) {
+      overlay.classList.add('active');
+      const overlayCard = overlay.querySelector('.pause-card');
+      if (overlayCard) {
+        overlayCard.dataset.originalHTML = overlayCard.innerHTML;
+        overlayCard.innerHTML = `
+          <div class="spinner" style="margin: 0 auto 15px;"></div>
+          <h2>🎬 جاري تحميل الإعلان...</h2>
+          <p>احصل على 25 MHA 🎁</p>
+        `;
+      }
+    }
+
+    // حاول عرض الإعلان
+    window.showAdexora()
+      .then(() => {
+        // ✅ نجح الإعلان — امنح المكافأة
+        lastPauseAdTime = Date.now();
+        localStorage.setItem('mha_last_pause_ad', lastPauseAdTime.toString());
+        score += PAUSE_AD_REWARD;
+        updateUI();
+        saveToFirebase();
+        SoundManager.gift();
+        showFloatingText('+' + PAUSE_AD_REWARD + ' MHA 🎁', '#8b5cf6');
+        if (window.Telegram?.WebApp?.HapticFeedback) {
+          window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
+        }
+        console.log('✅ Pause Ad rewarded: +' + PAUSE_AD_REWARD + ' MHA');
+      })
+      .catch((e) => {
+        // ❌ فشل الإعلان — لا مكافأة
+        console.warn('Pause Ad failed/dismissed:', e);
+      })
+      .finally(() => {
+        // 🎯 في كل الحالات — أعد الشاشة الأصلية
+        if (overlay) {
+          const overlayCard = overlay.querySelector('.pause-card');
+          if (overlayCard && overlayCard.dataset.originalHTML) {
+            overlayCard.innerHTML = overlayCard.dataset.originalHTML;
+            delete overlayCard.dataset.originalHTML;
+          }
+        }
+      });
+    return;
+  }
+
+  // ❌ الحالة 2: لا يمكن عرض الإعلان — أظهر شاشة الإيقاف العادية
+  if (overlay) overlay.classList.add('active');
 }
 
 function stopSpawners() {
@@ -1027,6 +1103,11 @@ async function buyProduct(productId) {
       } else if (status === 'failed') {
         alert(t('payFail'));
       }
+       // 🎬 استرجاع وقت آخر إعلان Pause من localStorage
+(function initPauseAd() {
+  const stored = parseInt(localStorage.getItem('mha_last_pause_ad') || '0');
+  if (stored) lastPauseAdTime = stored;
+})();
     });
   } catch (e) {
     console.error(e);
