@@ -29,8 +29,9 @@ const POWERUP_DURATION_MS = 30 * 1000;
 const SHIELD_DURATION_MS = 5 * 60 * 1000;
 
 // 🎬 Pause Ad — إعلان تلقائي عند الإيقاف المؤقت
-const PAUSE_AD_COOLDOWN_MS = 3 * 60 * 1000;  // كل 3 دقائق
-const PAUSE_AD_REWARD = 25;                   // 25 MHA لكل إعلان
+const PAUSE_AD_COOLDOWN_MS = 3 * 60 * 1000;
+const PAUSE_AD_REWARD = 25;
+const ADS_ENABLED = false;  // 🚫 أوقف الإعلانات مؤقتاً
 
 // --- State ---
 // --- State ---
@@ -516,9 +517,9 @@ function togglePause() {
   const stored = parseInt(localStorage.getItem('mha_last_pause_ad') || '0');
   if (stored > lastPauseAdTime) lastPauseAdTime = stored;
 
-  const canShowAd = (now - lastPauseAdTime) >= PAUSE_AD_COOLDOWN_MS;
-  const adexoraReady = typeof window.showAdexora === 'function';
-
+ const canShowAd = ADS_ENABLED && (now - lastPauseAdTime) >= PAUSE_AD_COOLDOWN_MS;
+const adexoraReady = ADS_ENABLED && typeof window.showAdexora === 'function';
+   
   // ✅ الحالة 1: يمكن عرض الإعلان + Adexora جاهز
   if (canShowAd && adexoraReady) {
     // اعرض شاشة إيقاف مؤقتاً مع رسالة "جاري تحميل الإعلان"
