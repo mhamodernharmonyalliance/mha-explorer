@@ -75,13 +75,7 @@ const I18N = {
     tutStep5: "Open the store to buy packs with Stars ⭐",
     tutStart: "🚀 Let's go!",
 
-    adWait: "⏳ Wait",
-    adBefore: "before a new ad.",
-    adNoAds: "⚠️ No ads available. Try later.",
-    adError: "⚠️ Error. Try again.",
-    adBoost: "🎬 3x boost active for 90 seconds!",
-
-    refBonus: "🎁 Surprise! You received {n} MHA from a successful referral!",
+       refBonus: "🎁 Surprise! You received {n} MHA from a successful referral!",
     offlineScoreKept: "Playing offline — score will sync later."
   },
 
@@ -157,13 +151,7 @@ const I18N = {
     tutStep5: "افتح المتجر لشراء الحزم بالنجوم ⭐",
     tutStart: "🚀 هيا نبدأ!",
 
-    adWait: "⏳ انتظر",
-    adBefore: "قبل إعلان جديد.",
-    adNoAds: "⚠️ لا توجد إعلانات متاحة. جرب لاحقاً.",
-    adError: "⚠️ خطأ. جرب مرة أخرى.",
-    adBoost: "🎬 تعزيز ×3 فعال لمدة 90 ثانية!",
-
-    refBonus: "🎁 مفاجأة! حصلت على {n} MHA مقابل إحالة ناجحة!",
+       refBonus: "🎁 مفاجأة! حصلت على {n} MHA مقابل إحالة ناجحة!",
     offlineScoreKept: "وضع غير متصل — سيتم المزامنة لاحقاً."
   }
 };
