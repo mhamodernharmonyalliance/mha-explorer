@@ -1,9 +1,10 @@
 /* ==========================================
-   MHASpace v6 - Adexora Edition
-   8 Levels + Shark Colors + Star Packs + Adexora
+   MHASpace v7 - Final Edition
+   8 Levels + Shark Colors + Star Packs
+   + Challenge Friend + No Ads
    ========================================== */
 
-// --- Firebase ---
+// ==================== FIREBASE ====================
 const firebaseConfig = {
   apiKey: "AIzaSyBJTd25x7MKfcQVzAH7ZNNaAwUjXs_-CoI",
   authDomain: "mhaexplorer-ac7a7.firebaseapp.com",
@@ -16,8 +17,7 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-// --- Constants ---
-// --- Constants ---
+// ==================== CONSTANTS ====================
 const TEMP_BOOST_DURATION_MS = 90 * 1000;
 const AD_COOLDOWN_MS = 3 * 60 * 1000;
 const AD_BOOST_MULTIPLIER = 3;
@@ -28,13 +28,16 @@ const COMBO_WINDOW_MS = 2000;
 const POWERUP_DURATION_MS = 30 * 1000;
 const SHIELD_DURATION_MS = 5 * 60 * 1000;
 
-// 🎬 Pause Ad — إعلان تلقائي عند الإيقاف المؤقت
+// Challenge
+const CHALLENGE_COOLDOWN_MS = 3 * 60 * 1000;
+const CHALLENGE_REWARD = 100;
+
+// Ads
+const ADS_ENABLED = false;
 const PAUSE_AD_COOLDOWN_MS = 3 * 60 * 1000;
 const PAUSE_AD_REWARD = 25;
-const ADS_ENABLED = false;  // 🚫 أوقف الإعلانات مؤقتاً
 
-// --- State ---
-// --- State ---
+// ==================== STATE ====================
 let score = 0.00;
 let tempMultiplier = 1;
 let tempBoostExpiry = 0;
@@ -44,7 +47,8 @@ let isPaused = false;
 let lastAdWatchTime = 0;
 let lastSaveTime = 0;
 let saveTimer = null;
-let lastPauseAdTime = 0;  // 🎬 آخر وقت لإعلان Pause
+let lastPauseAdTime = 0;
+let lastChallengeTime = 0;
 
 // Combo
 let comboCount = 0;
@@ -72,10 +76,7 @@ let lastDailyClaim = 0;
 // Tutorial
 const TUTORIAL_KEY = 'mha_tutorial_done';
 
-// --- Adexora State ---
-let adexoraReady = false;
-
-// --- Telegram Init ---
+// ==================== TELEGRAM INIT ====================
 (function initTelegram() {
   const tg = window.Telegram?.WebApp;
   if (!tg) return;
@@ -87,7 +88,7 @@ let adexoraReady = false;
   } catch (e) { console.warn('Telegram init:', e); }
 })();
 
-// --- Levels & Shark Colors ---
+// ==================== LEVELS ====================
 const LEVELS = [
   { min: 0,      key: 'levelDrop',     icon: "💧", class: "level-1", shark: 'silver'   },
   { min: 30000,  key: 'levelBronze',   icon: "🥉", class: "level-2", shark: 'bronze'   },
@@ -136,29 +137,7 @@ function formatNum(n) {
   return Math.floor(n).toString();
 }
 
-// ==========================================
-// 🎬 Adexora — فحص الجاهزية
-// ==========================================
-function checkAdexoraReady() {
-  if (typeof window.showAdexora === 'function') {
-    adexoraReady = true;
-    console.log('✅ Adexora ready');
-    return true;
-  }
-  return false;
-}
-
-// فحص كل ثانية حتى يجهز
-let adexoraCheckInterval = setInterval(() => {
-  if (checkAdexoraReady()) {
-    clearInterval(adexoraCheckInterval);
-  }
-}, 1000);
-
-// فحص أولي بعد 3 ثوان
-setTimeout(checkAdexoraReady, 3000);
-
-// --- User ---
+// ==================== USER ====================
 function getUserId() {
   const u = window.Telegram?.WebApp?.initDataUnsafe?.user;
   if (u && u.id) return u.id.toString();
@@ -179,7 +158,7 @@ function getReferrerId() {
   return sp ? sp.toString() : null;
 }
 
-// --- Auto Register ---
+// ==================== AUTO REGISTER ====================
 async function autoRegisterUser() {
   const userId = getUserId();
   if (!userId) return;
@@ -211,7 +190,7 @@ async function autoRegisterUser() {
   } catch (e) { console.warn('autoRegister:', e); }
 }
 
-// --- Save ---
+// ==================== SAVE ====================
 function scheduleSave() {
   if (saveTimer) return;
   const elapsed = Date.now() - lastSaveTime;
@@ -232,7 +211,7 @@ function saveToFirebase() {
     .catch(e => console.warn('save failed:', e));
 }
 
-// --- Load ---
+// ==================== LOAD ====================
 async function loadUserData() {
   await autoRegisterUser();
   const userId = getUserId();
@@ -243,7 +222,6 @@ async function loadUserData() {
       score = typeof data.score === 'number' ? data.score : 0;
       lastDailyClaim = data.lastDailyClaim || 0;
 
-      // استرجع الـ Buffs النشطة
       if (data.activeBuffs && typeof data.activeBuffs === 'object') {
         const now = Date.now();
         if (data.activeBuffs.magnet > now) magnetExpiry = data.activeBuffs.magnet;
@@ -252,7 +230,6 @@ async function loadUserData() {
         if (data.activeBuffs.shield > now) shieldExpiry = data.activeBuffs.shield;
       }
 
-      // آخر شراء غير معروض
       if (data.lastPurchase && !data.lastPurchase.shown) {
         db.ref('players/' + userId + '/lastPurchase/shown').set(true);
         applyPurchaseBuffs(data.lastPurchase);
@@ -269,7 +246,6 @@ async function loadUserData() {
     if (status) status.innerText = t('connected');
     updateUI();
 
-    // 🎨 طبّق لون القرش الحالي
     const currentLevel = getLevel(score);
     updateSharkColor(currentLevel.key);
     applyBiome(LEVELS.indexOf(currentLevel) + 1);
@@ -293,7 +269,7 @@ async function loadUserData() {
 }
 loadUserData();
 
-// ⏰ مؤقت أمان
+// ⏰ Safe splash
 setTimeout(() => {
   const s = document.getElementById('splash-loader');
   if (s && !s.classList.contains('hide')) {
@@ -316,7 +292,7 @@ function checkPendingReferralBonuses(userId) {
   });
 }
 
-// --- 🎁 Apply Purchase Buffs ---
+// ==================== PURCHASE BUFFS ====================
 function applyPurchaseBuffs(purchase) {
   if (!purchase || !purchase.buffs) return;
   const now = Date.now();
@@ -361,7 +337,7 @@ function showPackReward(purchase) {
   SoundManager.gift();
 }
 
-// --- Daily ---
+// ==================== DAILY ====================
 function checkDailyReward() {
   const now = Date.now();
   const dayMs = 24 * 60 * 60 * 1000;
@@ -385,7 +361,7 @@ function claimDaily() {
   }
 }
 
-// --- Tutorial ---
+// ==================== TUTORIAL ====================
 function maybeShowTutorial() {
   if (!localStorage.getItem(TUTORIAL_KEY)) {
     setTimeout(() => document.getElementById('tut-modal').classList.add('active'), 700);
@@ -406,7 +382,7 @@ function toggleMute() {
   }
 }
 
-// --- UI ---
+// ==================== UI ====================
 function updateUI() {
   const scoreEl = document.getElementById('score-val');
   if (scoreEl) scoreEl.innerText = score.toFixed(2);
@@ -484,13 +460,11 @@ function getEffectiveMultiplier() {
   return m;
 }
 
-// --- Pause ---
-// --- Pause (with Auto Ad) ---
+// ==================== PAUSE ====================
 function togglePause() {
   const overlay = document.getElementById('pause-overlay');
   const btn = document.getElementById('pause-btn');
 
-  // === حالة الاستئناف ===
   if (isPaused) {
     isPaused = false;
     startSpawners();
@@ -503,7 +477,6 @@ function togglePause() {
     return;
   }
 
-  // === حالة الإيقاف المؤقت ===
   isPaused = true;
   stopSpawners();
   if (btn) { btn.innerText = '▶️'; btn.classList.add('is-active'); }
@@ -512,34 +485,14 @@ function togglePause() {
     window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
   }
 
-  // 🎬 فحص إمكانية عرض الإعلان
-  const now = Date.now();
-  const stored = parseInt(localStorage.getItem('mha_last_pause_ad') || '0');
-  if (stored > lastPauseAdTime) lastPauseAdTime = stored;
+  // ADS_ENABLED = false → لا إعلان
+  const canShowAd = ADS_ENABLED && ((Date.now() - lastPauseAdTime) >= PAUSE_AD_COOLDOWN_MS);
+  const adexoraReady = ADS_ENABLED && typeof window.showAdexora === 'function';
 
- const canShowAd = ADS_ENABLED && (now - lastPauseAdTime) >= PAUSE_AD_COOLDOWN_MS;
-const adexoraReady = ADS_ENABLED && typeof window.showAdexora === 'function';
-   
-  // ✅ الحالة 1: يمكن عرض الإعلان + Adexora جاهز
   if (canShowAd && adexoraReady) {
-    // اعرض شاشة إيقاف مؤقتاً مع رسالة "جاري تحميل الإعلان"
-    if (overlay) {
-      overlay.classList.add('active');
-      const overlayCard = overlay.querySelector('.pause-card');
-      if (overlayCard) {
-        overlayCard.dataset.originalHTML = overlayCard.innerHTML;
-        overlayCard.innerHTML = `
-          <div class="spinner" style="margin: 0 auto 15px;"></div>
-          <h2>🎬 جاري تحميل الإعلان...</h2>
-          <p>احصل على 25 MHA 🎁</p>
-        `;
-      }
-    }
-
-    // حاول عرض الإعلان
+    if (overlay) overlay.classList.add('active');
     window.showAdexora()
       .then(() => {
-        // ✅ نجح الإعلان — امنح المكافأة
         lastPauseAdTime = Date.now();
         localStorage.setItem('mha_last_pause_ad', lastPauseAdTime.toString());
         score += PAUSE_AD_REWARD;
@@ -550,26 +503,11 @@ const adexoraReady = ADS_ENABLED && typeof window.showAdexora === 'function';
         if (window.Telegram?.WebApp?.HapticFeedback) {
           window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
         }
-        console.log('✅ Pause Ad rewarded: +' + PAUSE_AD_REWARD + ' MHA');
       })
-      .catch((e) => {
-        // ❌ فشل الإعلان — لا مكافأة
-        console.warn('Pause Ad failed/dismissed:', e);
-      })
-      .finally(() => {
-        // 🎯 في كل الحالات — أعد الشاشة الأصلية
-        if (overlay) {
-          const overlayCard = overlay.querySelector('.pause-card');
-          if (overlayCard && overlayCard.dataset.originalHTML) {
-            overlayCard.innerHTML = overlayCard.dataset.originalHTML;
-            delete overlayCard.dataset.originalHTML;
-          }
-        }
-      });
+      .catch((e) => console.warn('Pause Ad failed:', e));
     return;
   }
 
-  // ❌ الحالة 2: لا يمكن عرض الإعلان — أظهر شاشة الإيقاف العادية
   if (overlay) overlay.classList.add('active');
 }
 
@@ -594,13 +532,9 @@ window.addEventListener('keydown', (e) => {
   }
 });
 
-// ==========================================
-// 🎬 Ads — Adexora Rewarded Video
-// ==========================================
+// ==================== ADS (Disabled) ====================
 async function watchTimedAd() {
   if (isPaused) return;
-
-  // ⏳ فحص الـ Cooldown
   const now = Date.now();
   if (now - lastAdWatchTime < AD_COOLDOWN_MS) {
     const r = AD_COOLDOWN_MS - (now - lastAdWatchTime);
@@ -608,70 +542,19 @@ async function watchTimedAd() {
     alert(`${t('adWait')} ${m}:${s.toString().padStart(2, '0')} ${t('adBefore')}`);
     return;
   }
-
-  // 🎬 فحص جاهزية Adexora
-  if (typeof window.showAdexora !== 'function') {
+  if (!ADS_ENABLED || typeof window.showAdexora !== 'function') {
     alert(t('adNoAds'));
     return;
-  }
-
-  const btn = document.getElementById('ad-btn');
-  if (btn) btn.disabled = true;
-
-  try {
-    // 🎬 عرض إعلان Adexora
-    await window.showAdexora();
-
-    // ✅ نجح — امنح المكافأة
-    lastAdWatchTime = Date.now();
-    localStorage.setItem('mha_last_ad', lastAdWatchTime.toString());
-
-    tempMultiplier = AD_BOOST_MULTIPLIER;
-    tempBoostExpiry = Date.now() + TEMP_BOOST_DURATION_MS;
-    updateUI();
-    SoundManager.powerup();
-
-    alert(t('adBoost'));
-
-    setTimeout(() => {
-      tempMultiplier = 1;
-      tempBoostExpiry = 0;
-      updateUI();
-    }, TEMP_BOOST_DURATION_MS);
-
-  } catch (e) {
-    console.warn('Adexora error:', e);
-    alert(t('adError'));
-  } finally {
-    if (btn) btn.disabled = false;
   }
 }
 
 function startAdCooldownTicker() {
   const stored = parseInt(localStorage.getItem('mha_last_ad') || '0');
   if (stored && stored > lastAdWatchTime) lastAdWatchTime = stored;
-
-  const cd = document.getElementById('ad-cooldown');
-  const btn = document.getElementById('ad-btn');
-  if (!cd || !btn) return;
-  setInterval(() => {
-    const now = Date.now();
-    const r = AD_COOLDOWN_MS - (now - lastAdWatchTime);
-    if (r > 0 && lastAdWatchTime > 0) {
-      const m = Math.floor(r / 60000), s = Math.floor((r % 60000) / 1000);
-      cd.style.display = 'block';
-      cd.innerText = `${m}:${s.toString().padStart(2, '0')}`;
-      btn.disabled = true;
-    } else {
-      cd.style.display = 'none';
-      btn.disabled = false;
-    }
-  }, 1000);
+  // يمكن إضافة تحديث الزر هنا لاحقاً
 }
 
-// ==========================================
-// --- Three.js ---
-// ==========================================
+// ==================== THREE.JS ====================
 const container = document.getElementById('canvas-container');
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x020617);
@@ -692,6 +575,7 @@ const grid = new THREE.GridHelper(100, 50, 0x0c4a6e, 0x082f49);
 grid.position.y = -1;
 scene.add(grid);
 
+// Bubbles
 const bubbleGeo = new THREE.BufferGeometry();
 const bubbleCount = 1000;
 const bubblePositions = new Float32Array(bubbleCount * 3);
@@ -705,6 +589,7 @@ const bubbleMat = new THREE.PointsMaterial({ color: 0x38bdf8, size: 0.15, transp
 const bubbleField = new THREE.Points(bubbleGeo, bubbleMat);
 scene.add(bubbleField);
 
+// Shark
 const sharkGroup = new THREE.Group();
 const bodyGeo = new THREE.ConeGeometry(0.6, 2, 8);
 const bodyMat = new THREE.MeshStandardMaterial({ color: 0xcbd5e1, metalness: 0.9, roughness: 0.2, emissive: 0x38bdf8, emissiveIntensity: 0.35 });
@@ -722,20 +607,18 @@ sharkGroup.add(sharkFin);
 sharkGroup.position.set(0, 0, 4);
 scene.add(sharkGroup);
 
-// 🎨 Update shark color by level
 function updateSharkColor(levelKey) {
   const level = LEVELS.find(l => l.key === levelKey) || LEVELS[0];
   const colors = SHARK_COLORS[level.shark] || SHARK_COLORS.silver;
-
   bodyMat.color.setHex(colors.body);
   bodyMat.emissive.setHex(colors.emissive);
   finMat.color.setHex(colors.fin);
   finMat.emissive.setHex(colors.emissive);
-
   bodyMat.needsUpdate = true;
   finMat.needsUpdate = true;
 }
 
+// Treasures
 const treasures = [];
 function spawnTreasure(isBig = false) {
   if (isPaused) return;
@@ -778,6 +661,7 @@ function maybeSpawnPowerup() {
 
 startSpawners();
 
+// Particles
 const particles = [];
 function createBubbleBurst(position, colorHex) {
   const pCount = 15;
@@ -852,6 +736,7 @@ function applyBiome(levelIndex) {
   bubbleMat.color.setHex(biome.bubble);
 }
 
+// ==================== CATCH HANDLER ====================
 function onCatch(t) {
   const now = Date.now();
 
@@ -919,6 +804,7 @@ function onCatch(t) {
   lastLevel = newLevel;
 }
 
+// ==================== ANIMATION ====================
 function animate() {
   requestAnimationFrame(animate);
 
@@ -1012,9 +898,7 @@ document.addEventListener('visibilitychange', () => {
 
 setTimeout(() => { lastLevel = getLevel(score); }, 1500);
 
-// ==========================================
-// 🛒 Store
-// ==========================================
+// ==================== STORE ====================
 const STORE_ITEMS = [
   { id: 'starter_pack' },
   { id: 'boost_pack' },
@@ -1104,36 +988,19 @@ async function buyProduct(productId) {
       } else if (status === 'failed') {
         alert(t('payFail'));
       }
-             } else if (status === 'failed') {
-        alert(t('payFail'));
-      }
     });
-   // ==========================================
-// 🎬 Restore Pause Ad Time (once at load)
-// ==========================================
-      } else if (status === 'failed') {
-        alert(t('payFail'));
-      }
-    });
+  } catch (e) {
+    console.error(e);
+    if (payModal) payModal.classList.remove('active');
+    alert(t('payNetErr'));
+  }
+}
 
-// ==========================================
-// ⚔️ Challenge Friend — Share & Reward
-// ==========================================
-const CHALLENGE_COOLDOWN_MS = 3 * 60 * 1000;   // 3 دقائق
-const CHALLENGE_REWARD = 100;                   // +100 MHA
-let lastChallengeTime = 0;
-
-// استرجاع آخر وقت تحدي
-(function initChallenge() {
-  const stored = parseInt(localStorage.getItem('mha_last_challenge') || '0');
-  if (stored) lastChallengeTime = stored;
-})();
-
+// ==================== CHALLENGE FRIEND ====================
 function challengeFriend() {
   console.log('⚔️ Challenge button clicked');
   const tg = window.Telegram?.WebApp;
 
-  // 🕐 فحص Cooldown
   const now = Date.now();
   const stored = parseInt(localStorage.getItem('mha_last_challenge') || '0');
   if (stored > lastChallengeTime) lastChallengeTime = stored;
@@ -1146,14 +1013,12 @@ function challengeFriend() {
     return;
   }
 
-  // 📝 بناء الرسالة
   const userId = getUserId();
   const refLink = `https://t.me/MhaExplorer_bot/explorer?startapp=${userId}`;
   const scoreText = Math.floor(score);
   const message = `حققتُ ${scoreText} MHA في MHASpace! هل تستطيع كسر رقمي؟ 🦈⚔️`;
   const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(refLink)}&text=${encodeURIComponent(message)}`;
 
-  // 📤 فتح المشاركة
   try {
     if (tg?.openTelegramLink) {
       tg.openTelegramLink(shareUrl);
@@ -1166,7 +1031,6 @@ function challengeFriend() {
     return;
   }
 
-  // 🎁 المكافأة
   lastChallengeTime = now;
   localStorage.setItem('mha_last_challenge', now.toString());
   score += CHALLENGE_REWARD;
@@ -1181,7 +1045,6 @@ function challengeFriend() {
   console.log('✅ Challenge rewarded: +' + CHALLENGE_REWARD + ' MHA');
 }
 
-// ⏱️ تحديث حالة الزر (رمادي خلال Cooldown)
 setInterval(() => {
   const btn = document.getElementById('challenge-btn');
   if (!btn) return;
@@ -1189,84 +1052,14 @@ setInterval(() => {
   const isCooling = (Date.now() - stored) < CHALLENGE_COOLDOWN_MS;
   btn.classList.toggle('cooldown', isCooling);
 }, 1000);
-// ==========================================
-// 🎬 Restore Pause Ad Time (once at load)
-// ==========================================
+
+// ==================== INIT ====================
 (function initPauseAd() {
   const stored = parseInt(localStorage.getItem('mha_last_pause_ad') || '0');
   if (stored) lastPauseAdTime = stored;
 })();
 
-// ==========================================
-// ⚔️ Challenge Friend — Share & Reward
-// ==========================================
-const CHALLENGE_COOLDOWN_MS = 3 * 60 * 1000;   // 3 دقائق
-const CHALLENGE_REWARD = 100;                   // +100 MHA
-let lastChallengeTime = 0;
-
-// استرجاع آخر وقت تحدي
 (function initChallenge() {
   const stored = parseInt(localStorage.getItem('mha_last_challenge') || '0');
   if (stored) lastChallengeTime = stored;
 })();
-
-function challengeFriend() {
-  console.log('⚔️ Challenge button clicked');
-  const tg = window.Telegram?.WebApp;
-
-  // 🕐 فحص Cooldown
-  const now = Date.now();
-  const stored = parseInt(localStorage.getItem('mha_last_challenge') || '0');
-  if (stored > lastChallengeTime) lastChallengeTime = stored;
-
-  if (now - lastChallengeTime < CHALLENGE_COOLDOWN_MS) {
-    const r = CHALLENGE_COOLDOWN_MS - (now - lastChallengeTime);
-    const m = Math.floor(r / 60000);
-    const s = Math.floor((r % 60000) / 1000);
-    alert(`⏳ انتظر ${m}:${s.toString().padStart(2, '0')} قبل التحدي التالي`);
-    return;
-  }
-
-  // 📝 بناء الرسالة
-  const userId = getUserId();
-  const refLink = `https://t.me/MhaExplorer_bot/explorer?startapp=${userId}`;
-  const scoreText = Math.floor(score);
-  const message = `حققتُ ${scoreText} MHA في MHASpace! هل تستطيع كسر رقمي؟ 🦈⚔️`;
-  const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(refLink)}&text=${encodeURIComponent(message)}`;
-
-  // 📤 فتح المشاركة
-  try {
-    if (tg?.openTelegramLink) {
-      tg.openTelegramLink(shareUrl);
-    } else {
-      window.open(shareUrl, '_blank');
-    }
-  } catch (e) {
-    console.warn('Share failed:', e);
-    alert('⚠️ تعذر فتح المشاركة');
-    return;
-  }
-
-  // 🎁 المكافأة
-  lastChallengeTime = now;
-  localStorage.setItem('mha_last_challenge', now.toString());
-  score += CHALLENGE_REWARD;
-  updateUI();
-  saveToFirebase();
-  SoundManager.gift();
-  showFloatingText(`+${CHALLENGE_REWARD} MHA 🎁`, '#8b5cf6');
-
-  if (tg?.HapticFeedback) {
-    tg.HapticFeedback.notificationOccurred('success');
-  }
-  console.log('✅ Challenge rewarded: +' + CHALLENGE_REWARD + ' MHA');
-}
-
-// ⏱️ تحديث حالة الزر (رمادي خلال Cooldown)
-setInterval(() => {
-  const btn = document.getElementById('challenge-btn');
-  if (!btn) return;
-  const stored = parseInt(localStorage.getItem('mha_last_challenge') || '0');
-  const isCooling = (Date.now() - stored) < CHALLENGE_COOLDOWN_MS;
-  btn.classList.toggle('cooldown', isCooling);
-}, 1000);
