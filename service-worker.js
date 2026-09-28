@@ -3,7 +3,7 @@
    Cache v5 (added i18n.js)
    ========================================== */
 
-const CACHE = 'mha-v8';  //
+const CACHE = 'mha-v9';
 const ASSETS = [
   '/',
   '/index.html',
