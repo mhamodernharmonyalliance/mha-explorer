@@ -64,8 +64,7 @@ export default {
     if (url.pathname === '/webhook' && request.method === 'POST') return handleWebhook(request, env);
     if (url.pathname === '/api/create-invoice' && request.method === 'POST') return handleCreateInvoice(request, env);
     if (url.pathname === '/api/save-score' && request.method === 'POST') return handleSaveScore(request, env);
-    if (url.pathname === '/reward' && request.method === 'GET') return handleReward(request, env);
-    if (url.pathname === '/api/products') return jsonResponse({ products: PRODUCTS });
+       if (url.pathname === '/api/products') return jsonResponse({ products: PRODUCTS });
     if (url.pathname === '/api/health') return jsonResponse({ ok: true, hasToken: !!env.BOT_TOKEN });
 
     if (env.ASSETS) return env.ASSETS.fetch(request);
@@ -256,35 +255,5 @@ async function handleSaveScore(request, env) {
     return jsonResponse({ ok: true, score: newScore });
   } catch (e) {
     return jsonResponse({ error: e.message }, 500);
-  }
-}
-
-async function handleReward(request, env) {
-  try {
-    const url = new URL(request.url);
-    const userId = url.searchParams.get('userId');
-    if (!userId) return new Response('Missing userId', { status: 400 });
-
-    const timestamp = Date.now();
-
-    await fetch(`${FIREBASE}/ad_rewards.json`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId, at: timestamp, source: 'adsgram' })
-    });
-
-    const counterRef = `${FIREBASE}/players/${userId}/adCount.json`;
-    const snap = await fetch(counterRef).then(r => r.json()).catch(() => 0);
-    const currentCount = typeof snap === 'number' ? snap : 0;
-
-    await fetch(`${FIREBASE}/players/${userId}.json`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ adCount: currentCount + 1, lastAdAt: timestamp })
-    });
-
-    return new Response('OK', { status: 200, headers: { 'Content-Type': 'text/plain' } });
-  } catch (e) {
-    return new Response('OK', { status: 200 });
   }
 }
