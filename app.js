@@ -19,23 +19,12 @@ const db = firebase.database();
 
 // ==================== CONSTANTS ====================
 const TEMP_BOOST_DURATION_MS = 90 * 1000;
-const AD_COOLDOWN_MS = 3 * 60 * 1000;
-const AD_BOOST_MULTIPLIER = 3;
 const REFERRAL_BONUS = 100;
 const DAILY_REWARD = 50;
 const SAVE_THROTTLE_MS = 5000;
 const COMBO_WINDOW_MS = 2000;
 const POWERUP_DURATION_MS = 30 * 1000;
 const SHIELD_DURATION_MS = 5 * 60 * 1000;
-
-// Challenge
-const CHALLENGE_COOLDOWN_MS = 3 * 60 * 1000;
-const CHALLENGE_REWARD = 100;
-
-// Ads
-const ADS_ENABLED = false;
-const PAUSE_AD_COOLDOWN_MS = 3 * 60 * 1000;
-const PAUSE_AD_REWARD = 25;
 
 // ==================== STATE ====================
 let score = 0.00;
@@ -44,12 +33,8 @@ let tempBoostExpiry = 0;
 let isDataLoaded = false;
 let lastLevel = null;
 let isPaused = false;
-let lastAdWatchTime = 0;
 let lastSaveTime = 0;
 let saveTimer = null;
-let lastPauseAdTime = 0;
-let lastChallengeTime = 0;
-
 // Combo
 let comboCount = 0;
 let lastCatchTime = 0;
@@ -246,11 +231,10 @@ async function loadUserData() {
     if (status) status.innerText = t('connected');
     updateUI();
 
-    const currentLevel = getLevel(score);
+        const currentLevel = getLevel(score);
     updateSharkColor(currentLevel.key);
     applyBiome(LEVELS.indexOf(currentLevel) + 1);
 
-    startAdCooldownTicker();
     checkPendingReferralBonuses(userId);
     checkDailyReward();
     maybeShowTutorial();
@@ -264,7 +248,6 @@ async function loadUserData() {
     const status = document.getElementById('db-status');
     if (status) status.innerText = t('offline');
     updateUI();
-    startAdCooldownTicker();
   }
 }
 loadUserData();
@@ -485,30 +468,7 @@ function togglePause() {
     window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
   }
 
-  // ADS_ENABLED = false → لا إعلان
-  const canShowAd = ADS_ENABLED && ((Date.now() - lastPauseAdTime) >= PAUSE_AD_COOLDOWN_MS);
-  const adexoraReady = ADS_ENABLED && typeof window.showAdexora === 'function';
-
-  if (canShowAd && adexoraReady) {
     if (overlay) overlay.classList.add('active');
-    window.showAdexora()
-      .then(() => {
-        lastPauseAdTime = Date.now();
-        localStorage.setItem('mha_last_pause_ad', lastPauseAdTime.toString());
-        score += PAUSE_AD_REWARD;
-        updateUI();
-        saveToFirebase();
-        SoundManager.gift();
-        showFloatingText('+' + PAUSE_AD_REWARD + ' MHA 🎁', '#8b5cf6');
-        if (window.Telegram?.WebApp?.HapticFeedback) {
-          window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
-        }
-      })
-      .catch((e) => console.warn('Pause Ad failed:', e));
-    return;
-  }
-
-  if (overlay) overlay.classList.add('active');
 }
 
 function stopSpawners() {
@@ -531,28 +491,6 @@ window.addEventListener('keydown', (e) => {
     togglePause();
   }
 });
-
-// ==================== ADS (Disabled) ====================
-async function watchTimedAd() {
-  if (isPaused) return;
-  const now = Date.now();
-  if (now - lastAdWatchTime < AD_COOLDOWN_MS) {
-    const r = AD_COOLDOWN_MS - (now - lastAdWatchTime);
-    const m = Math.floor(r / 60000), s = Math.floor((r % 60000) / 1000);
-    alert(`${t('adWait')} ${m}:${s.toString().padStart(2, '0')} ${t('adBefore')}`);
-    return;
-  }
-  if (!ADS_ENABLED || typeof window.showAdexora !== 'function') {
-    alert(t('adNoAds'));
-    return;
-  }
-}
-
-function startAdCooldownTicker() {
-  const stored = parseInt(localStorage.getItem('mha_last_ad') || '0');
-  if (stored && stored > lastAdWatchTime) lastAdWatchTime = stored;
-  // يمكن إضافة تحديث الزر هنا لاحقاً
-}
 
 // ==================== THREE.JS ====================
 const container = document.getElementById('canvas-container');
@@ -995,14 +933,3 @@ async function buyProduct(productId) {
     alert(t('payNetErr'));
   }
 }
-
-// ==================== INIT ====================
-(function initPauseAd() {
-  const stored = parseInt(localStorage.getItem('mha_last_pause_ad') || '0');
-  if (stored) lastPauseAdTime = stored;
-})();
-
-(function initChallenge() {
-  const stored = parseInt(localStorage.getItem('mha_last_challenge') || '0');
-  if (stored) lastChallengeTime = stored;
-})();
