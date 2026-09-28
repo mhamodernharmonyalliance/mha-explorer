@@ -996,63 +996,6 @@ async function buyProduct(productId) {
   }
 }
 
-// ==================== CHALLENGE FRIEND ====================
-function challengeFriend() {
-  console.log('⚔️ Challenge button clicked');
-  const tg = window.Telegram?.WebApp;
-
-  const now = Date.now();
-  const stored = parseInt(localStorage.getItem('mha_last_challenge') || '0');
-  if (stored > lastChallengeTime) lastChallengeTime = stored;
-
-  if (now - lastChallengeTime < CHALLENGE_COOLDOWN_MS) {
-    const r = CHALLENGE_COOLDOWN_MS - (now - lastChallengeTime);
-    const m = Math.floor(r / 60000);
-    const s = Math.floor((r % 60000) / 1000);
-    alert(`⏳ انتظر ${m}:${s.toString().padStart(2, '0')} قبل التحدي التالي`);
-    return;
-  }
-
-  const userId = getUserId();
-  const refLink = `https://t.me/MhaExplorer_bot/explorer?startapp=${userId}`;
-  const scoreText = Math.floor(score);
-  const message = `حققتُ ${scoreText} MHA في MHASpace! هل تستطيع كسر رقمي؟ 🦈⚔️`;
-  const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(refLink)}&text=${encodeURIComponent(message)}`;
-
-  try {
-    if (tg?.openTelegramLink) {
-      tg.openTelegramLink(shareUrl);
-    } else {
-      window.open(shareUrl, '_blank');
-    }
-  } catch (e) {
-    console.warn('Share failed:', e);
-    alert('⚠️ تعذر فتح المشاركة');
-    return;
-  }
-
-  lastChallengeTime = now;
-  localStorage.setItem('mha_last_challenge', now.toString());
-  score += CHALLENGE_REWARD;
-  updateUI();
-  saveToFirebase();
-  SoundManager.gift();
-  showFloatingText(`+${CHALLENGE_REWARD} MHA 🎁`, '#8b5cf6');
-
-  if (tg?.HapticFeedback) {
-    tg.HapticFeedback.notificationOccurred('success');
-  }
-  console.log('✅ Challenge rewarded: +' + CHALLENGE_REWARD + ' MHA');
-}
-
-setInterval(() => {
-  const btn = document.getElementById('challenge-btn');
-  if (!btn) return;
-  const stored = parseInt(localStorage.getItem('mha_last_challenge') || '0');
-  const isCooling = (Date.now() - stored) < CHALLENGE_COOLDOWN_MS;
-  btn.classList.toggle('cooldown', isCooling);
-}, 1000);
-
 // ==================== INIT ====================
 (function initPauseAd() {
   const stored = parseInt(localStorage.getItem('mha_last_pause_ad') || '0');
