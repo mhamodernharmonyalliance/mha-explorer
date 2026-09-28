@@ -8,7 +8,6 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-  <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#0088cc">
 
@@ -17,11 +16,13 @@
     body, html { width: 100%; height: 100%; overflow: hidden; background: #030712; color: #fff; }
     #canvas-container { width: 100%; height: 100%; position: absolute; top: 0; left: 0; z-index: 1; }
 
+    /* Splash */
     #splash-loader { position: fixed; inset: 0; background: #030712; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 9999; transition: opacity 0.5s; }
     #splash-loader.hide { opacity: 0; pointer-events: none; }
     .spinner { width: 50px; height: 50px; border: 4px solid rgba(56,189,248,0.2); border-top: 4px solid #38bdf8; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px; }
     @keyframes spin { 100% { transform: rotate(360deg); } }
 
+    /* HUD */
     #ui-container { position: absolute; top: 15px; left: 15px; right: 15px; z-index: 10; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
     .hud-card { background: rgba(15,23,42,0.75); backdrop-filter: blur(12px); border: 1px solid rgba(56,189,248,0.3); border-radius: 16px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 8px 32px rgba(0,0,0,0.37); pointer-events: auto; gap: 10px; }
     .score-title { font-size: 11px; color: #94a3b8; }
@@ -30,17 +31,18 @@
     .level-badge { display: flex; align-items: center; gap: 5px; padding: 5px 10px; border-radius: 20px; font-size: 12px; font-weight: bold; border: 2px solid; white-space: nowrap; }
     .level-badge .icon { font-size: 15px; }
     .level-1 { background: rgba(203,213,225,0.2); border-color: #cbd5e1; color: #e2e8f0; }
-.level-2 { background: rgba(205,127,50,0.2);  border-color: #cd7f32; color: #ffb976; }
-.level-3 { background: rgba(229,231,235,0.2); border-color: #e5e7eb; color: #f3f4f6; }
-.level-4 { background: rgba(255,215,0,0.2);   border-color: #ffd700; color: #ffe97a; }
-.level-5 { background: rgba(16,185,129,0.2);  border-color: #10b981; color: #6ee7b7; animation: emeraldPulse 2s infinite; }
-.level-6 { background: rgba(59,130,246,0.2);  border-color: #3b82f6; color: #93c5fd; animation: sapphirePulse 2s infinite; }
-.level-7 { background: rgba(139,92,246,0.2);  border-color: #8b5cf6; color: #c4b5fd; animation: amethystPulse 2s infinite; }
-.level-8 { background: rgba(103,232,249,0.2); border-color: #67e8f9; color: #cffafe; animation: diamondPulse 1.5s infinite; }
-@keyframes emeraldPulse  { 0%,100% { box-shadow: 0 0 8px rgba(16,185,129,0.5); } 50% { box-shadow: 0 0 16px rgba(16,185,129,0.9); } }
-@keyframes sapphirePulse { 0%,100% { box-shadow: 0 0 8px rgba(59,130,246,0.5); } 50% { box-shadow: 0 0 16px rgba(59,130,246,0.9); } }
-@keyframes amethystPulse { 0%,100% { box-shadow: 0 0 8px rgba(139,92,246,0.5); } 50% { box-shadow: 0 0 16px rgba(139,92,246,0.9); } }
-@keyframes diamondPulse  { 0%,100% { box-shadow: 0 0 10px rgba(103,232,249,0.5); } 50% { box-shadow: 0 0 22px rgba(103,232,249,1); } }
+    .level-2 { background: rgba(205,127,50,0.2);  border-color: #cd7f32; color: #ffb976; }
+    .level-3 { background: rgba(229,231,235,0.2); border-color: #e5e7eb; color: #f3f4f6; }
+    .level-4 { background: rgba(255,215,0,0.2);   border-color: #ffd700; color: #ffe97a; }
+    .level-5 { background: rgba(16,185,129,0.2);  border-color: #10b981; color: #6ee7b7; animation: emeraldPulse 2s infinite; }
+    .level-6 { background: rgba(59,130,246,0.2);  border-color: #3b82f6; color: #93c5fd; animation: sapphirePulse 2s infinite; }
+    .level-7 { background: rgba(139,92,246,0.2);  border-color: #8b5cf6; color: #c4b5fd; animation: amethystPulse 2s infinite; }
+    .level-8 { background: rgba(103,232,249,0.2); border-color: #67e8f9; color: #cffafe; animation: diamondPulse 1.5s infinite; }
+
+    @keyframes emeraldPulse  { 0%,100% { box-shadow: 0 0 8px rgba(16,185,129,0.5); } 50% { box-shadow: 0 0 16px rgba(16,185,129,0.9); } }
+    @keyframes sapphirePulse { 0%,100% { box-shadow: 0 0 8px rgba(59,130,246,0.5); } 50% { box-shadow: 0 0 16px rgba(59,130,246,0.9); } }
+    @keyframes amethystPulse { 0%,100% { box-shadow: 0 0 8px rgba(139,92,246,0.5); } 50% { box-shadow: 0 0 16px rgba(139,92,246,0.9); } }
+    @keyframes diamondPulse  { 0%,100% { box-shadow: 0 0 10px rgba(103,232,249,0.5); } 50% { box-shadow: 0 0 22px rgba(103,232,249,1); } }
 
     .icon-btn { width: 34px; height: 34px; border-radius: 50%; background: rgba(56,189,248,0.15); border: 1px solid #38bdf8; color: #38bdf8; font-size: 14px; display: flex; justify-content: center; align-items: center; cursor: pointer; touch-action: manipulation; transition: transform 0.15s, background 0.2s; padding: 0; }
     .icon-btn:active { transform: scale(0.9); background: rgba(56,189,248,0.4); }
@@ -54,18 +56,13 @@
     .level-progress-bg { width: 100%; height: 7px; background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden; }
     .level-progress-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #0284c7, #38bdf8); border-radius: 4px; transition: width 0.3s ease; }
 
+    /* Powerups */
     .powerup-bar { position: fixed; top: 175px; right: 15px; z-index: 11; display: flex; flex-direction: column; gap: 6px; pointer-events: none; }
     .powerup-chip { background: rgba(15,23,42,0.85); border: 1px solid #38bdf8; border-radius: 20px; padding: 5px 12px; font-size: 12px; font-weight: bold; color: #38bdf8; display: flex; align-items: center; gap: 6px; backdrop-filter: blur(8px); box-shadow: 0 0 12px rgba(56,189,248,0.4); }
     .powerup-chip.magnet { border-color: #f472b6; color: #f472b6; box-shadow: 0 0 12px rgba(244,114,182,0.4); }
     .powerup-chip.x2 { border-color: #f59e0b; color: #f59e0b; box-shadow: 0 0 12px rgba(245,158,11,0.4); }
 
-    #bottom-bar { position: fixed; bottom: 0; left: 0; right: 0; height: 85px; background: rgba(2,6,23,0.95); backdrop-filter: blur(20px); border-top: 1px solid rgba(56,189,248,0.3); display: flex; justify-content: center; align-items: center; padding: 0 15px; z-index: 100; box-shadow: 0 -8px 32px rgba(0,0,0,0.5); }
-    .ad-btn { width: 100%; max-width: 400px; display: flex; align-items: center; justify-content: center; gap: 10px; background: linear-gradient(135deg, #10b981, #059669); border: none; border-radius: 14px; padding: 15px 20px; color: #fff; font-weight: bold; font-size: 15px; cursor: pointer; box-shadow: 0 4px 15px rgba(16,185,129,0.4); position: relative; }
-    .ad-btn:active { transform: scale(0.97); }
-    .ad-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-    .ad-btn .icon { font-size: 24px; }
-    .ad-cooldown { position: absolute; top: 4px; right: 8px; background: rgba(0,0,0,0.5); color: #fff; font-size: 10px; padding: 2px 8px; border-radius: 8px; font-weight: bold; }
-
+    /* Controls */
     #controls-container { position: absolute; bottom: 100px; left: 50%; transform: translateX(-50%); z-index: 10; display: grid; grid-template-columns: repeat(3, 55px); grid-template-rows: repeat(2, 55px); gap: 8px; }
     .control-btn { width: 55px; height: 55px; background: rgba(15,23,42,0.7); backdrop-filter: blur(8px); border: 1px solid rgba(56,189,248,0.4); border-radius: 50%; color: #38bdf8; font-size: 18px; display: flex; justify-content: center; align-items: center; cursor: pointer; touch-action: manipulation; }
     .control-btn:active { background: rgba(56,189,248,0.4); transform: scale(0.95); }
@@ -74,12 +71,47 @@
     #btn-down { grid-column: 2; grid-row: 2; }
     #btn-right { grid-column: 3; grid-row: 2; }
 
+    /* ⚔️ Challenge Button */
+    .challenge-btn {
+      position: fixed;
+      bottom: 100px;
+      right: 12px;
+      padding: 10px 14px;
+      background: linear-gradient(135deg, #8b5cf6, #6366f1);
+      border: 1px solid rgba(255,255,255,0.25);
+      border-radius: 24px;
+      color: #fff;
+      font-weight: bold;
+      font-size: 12px;
+      cursor: pointer;
+      box-shadow: 0 4px 15px rgba(139,92,246,0.5);
+      z-index: 50;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: transform 0.15s, box-shadow 0.2s;
+      touch-action: manipulation;
+    }
+    .challenge-btn:active {
+      transform: scale(0.94);
+      box-shadow: 0 2px 8px rgba(139,92,246,0.7);
+    }
+    .challenge-btn .ch-icon { font-size: 16px; }
+    .challenge-btn .ch-text { font-size: 12px; }
+    .challenge-btn.cooldown {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* Floating text */
     .floating-text { position: absolute; color: #f59e0b; font-weight: bold; font-size: 20px; pointer-events: none; animation: floatUp 0.8s ease-out forwards; z-index: 50; text-shadow: 0 0 10px rgba(0,0,0,0.8); }
     @keyframes floatUp { 0% { opacity: 1; transform: translate(-50%, 0); } 100% { opacity: 0; transform: translate(-50%, -50px); } }
 
+    /* Combo */
     .combo-indicator { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 44px; font-weight: bold; color: #f59e0b; text-shadow: 0 0 20px rgba(245,158,11,0.9); pointer-events: none; z-index: 60; animation: comboPop 0.5s ease-out; }
     @keyframes comboPop { 0% { transform: translate(-50%, -50%) scale(0.3); opacity: 0; } 50% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; } 100% { transform: translate(-50%, -70%) scale(1); opacity: 0; } }
 
+    /* Modal */
     .modal-overlay { position: fixed; inset: 0; background: rgba(2,6,23,0.85); backdrop-filter: blur(10px); display: none; justify-content: center; align-items: center; z-index: 500; padding: 20px; }
     .modal-overlay.active { display: flex; }
     .modal-card { background: rgba(15,23,42,0.98); border: 1px solid rgba(56,189,248,0.4); border-radius: 22px; padding: 22px; text-align: center; box-shadow: 0 8px 40px rgba(0,0,0,0.6); max-width: 92vw; width: 440px; max-height: 88vh; overflow-y: auto; animation: popIn 0.3s ease; }
@@ -89,20 +121,7 @@
     .modal-card p { color: #94a3b8; font-size: 13px; margin-bottom: 14px; line-height: 1.6; }
     .modal-btn { background: linear-gradient(135deg, #10b981, #059669); border: none; border-radius: 14px; padding: 12px 26px; color: #fff; font-weight: bold; font-size: 14px; cursor: pointer; margin: 5px; }
     .modal-btn:active { transform: scale(0.96); }
-      .modal-btn.ghost { background: transparent; border: 1px solid #38bdf8; color: #38bdf8; }
-    
-    /* 🎬 Pause Ad Overlay Message */
-.pause-card .spinner {
-  width: 40px;
-  height: 40px;
-  border: 3px solid rgba(139,92,246,0.2);
-  border-top-color: #8b5cf6;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-@keyframes spin {
-  100% { transform: rotate(360deg); }
-}
+    .modal-btn.ghost { background: transparent; border: 1px solid #38bdf8; color: #38bdf8; }
 
     /* Store */
     .store-grid { display: grid; grid-template-columns: 1fr; gap: 10px; margin: 14px 0; }
@@ -143,14 +162,17 @@
 </head>
 <body>
 
+  <!-- Splash -->
   <div id="splash-loader">
     <div class="spinner"></div>
     <h3 style="color: #38bdf8; font-size: 18px;" data-i18n="splashTitle">Diving into MHASpace... 🦈</h3>
     <p style="color: #64748b; font-size: 12px; margin-top: 8px;" data-i18n="splashSub">Syncing ocean data</p>
   </div>
 
+  <!-- Canvas -->
   <div id="canvas-container"></div>
 
+  <!-- HUD -->
   <div id="ui-container">
     <div class="hud-card">
       <div>
@@ -162,10 +184,10 @@
           <span class="icon">💧</span>
           <span id="level-text" data-i18n="levelDrop">Drop</span>
         </div>
-        <button class="icon-btn lang" id="lang-btn" onclick="toggleLanguage()" title="Language" data-i18n-title="btnLang">🌐</button>
-        <button class="icon-btn store" id="store-btn" onclick="openStore()" title="Store" data-i18n-title="btnStore">🛒</button>
-        <button class="icon-btn" id="mute-btn" onclick="toggleMute()" title="Sound" data-i18n-title="btnMute">🔊</button>
-        <button class="icon-btn" id="pause-btn" onclick="togglePause()" title="Pause" data-i18n-title="btnPause">⏸️</button>
+        <button class="icon-btn lang" id="lang-btn" onclick="toggleLanguage()" title="Language">🌐</button>
+        <button class="icon-btn store" id="store-btn" onclick="openStore()" title="Store">🛒</button>
+        <button class="icon-btn" id="mute-btn" onclick="toggleMute()" title="Sound">🔊</button>
+        <button class="icon-btn" id="pause-btn" onclick="togglePause()" title="Pause">⏸️</button>
       </div>
     </div>
 
@@ -185,8 +207,10 @@
     </div>
   </div>
 
+  <!-- Powerups -->
   <div class="powerup-bar" id="powerup-bar"></div>
 
+  <!-- Controls -->
   <div id="controls-container">
     <button class="control-btn" id="btn-up">▲</button>
     <button class="control-btn" id="btn-left">◄</button>
@@ -194,6 +218,13 @@
     <button class="control-btn" id="btn-right">►</button>
   </div>
 
+  <!-- ⚔️ Challenge Button -->
+  <button class="challenge-btn" id="challenge-btn" onclick="challengeFriend()">
+    <span class="ch-icon">⚔️</span>
+    <span class="ch-text" data-i18n="challengeFriend">تحدَّ</span>
+  </button>
+
+  <!-- Pause Overlay -->
   <div id="pause-overlay" class="pause-overlay">
     <div class="pause-card">
       <span class="pause-icon">⏸️</span>
@@ -203,6 +234,7 @@
     </div>
   </div>
 
+  <!-- Daily Reward -->
   <div id="daily-modal" class="modal-overlay">
     <div class="modal-card">
       <span class="modal-icon">🎁</span>
@@ -212,6 +244,7 @@
     </div>
   </div>
 
+  <!-- Store -->
   <div id="store-modal" class="modal-overlay">
     <div class="modal-card">
       <span class="modal-icon">🛒</span>
@@ -222,6 +255,7 @@
     </div>
   </div>
 
+  <!-- Payment Loading -->
   <div id="pay-modal" class="modal-overlay">
     <div class="modal-card">
       <div class="spinner" style="margin: 0 auto 15px;"></div>
@@ -230,6 +264,7 @@
     </div>
   </div>
 
+  <!-- Tutorial -->
   <div id="tut-modal" class="modal-overlay">
     <div class="modal-card">
       <span class="modal-icon">🦈</span>
@@ -238,21 +273,14 @@
       <div class="tut-step"><span class="emoji">🕹️</span><span class="txt" data-i18n="tutStep1">Use arrow buttons to move your shark.</span></div>
       <div class="tut-step"><span class="emoji">💧</span><span class="txt" data-i18n="tutStep2">Collect blue pearls (+0.01) and gold ones (+1.00).</span></div>
       <div class="tut-step"><span class="emoji">🎁</span><span class="txt" data-i18n="tutStep3">Catch golden gift boxes for random rewards!</span></div>
-      <div class="tut-step"><span class="emoji">📺</span><span class="txt" data-i18n="tutStep4">Watch ads to 3x your earnings for 90 seconds.</span></div>
-      <div class="tut-step"><span class="emoji">🛒</span><span class="txt" data-i18n="tutStep5">Open the store to buy features with Stars ⭐</span></div>
+      <div class="tut-step"><span class="emoji">⚔️</span><span class="txt" data-i18n="tutStep4">Challenge a friend and get +100 MHA!</span></div>
+      <div class="tut-step"><span class="emoji">🛒</span><span class="txt" data-i18n="tutStep5">Open the store to buy packs with Stars ⭐</span></div>
       <button class="modal-btn" onclick="closeTutorial()" data-i18n="tutStart">🚀 Let's go!</button>
     </div>
   </div>
 
-  <div id="bottom-bar">
-    <button class="ad-btn" onclick="watchTimedAd()" id="ad-btn">
-      <span class="icon">📺</span>
-      <span id="ad-btn-text">Watch ad → 3x boost for 90s</span>
-      <span class="ad-cooldown" id="ad-cooldown" style="display:none;">0:00</span>
-    </button>
-  </div>
-
-   <script src="sound.js"></script>
+  <!-- Scripts -->
+  <script src="sound.js"></script>
   <script src="i18n.js"></script>
   <script src="app.js"></script>
 
