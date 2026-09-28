@@ -71,40 +71,7 @@
     #btn-down { grid-column: 2; grid-row: 2; }
     #btn-right { grid-column: 3; grid-row: 2; }
 
-    /* ⚔️ Challenge Button */
-        /* ⚔️ Challenge Button */
-    .challenge-btn {
-      position: fixed;
-      bottom: 240px;
-      right: 12px;
-      padding: 10px 14px;
-      background: linear-gradient(135deg, #8b5cf6, #6366f1);
-      border: 1px solid rgba(255,255,255,0.25);
-      border-radius: 24px;
-      color: #fff;
-      font-weight: bold;
-      font-size: 12px;
-      cursor: pointer;
-      box-shadow: 0 4px 15px rgba(139,92,246,0.5);
-      z-index: 50;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      transition: transform 0.15s, box-shadow 0.2s;
-      touch-action: manipulation;
-    }
-    .challenge-btn:active {
-      transform: scale(0.94);
-      box-shadow: 0 2px 8px rgba(139,92,246,0.7);
-    }
-    .challenge-btn .ch-icon { font-size: 16px; }
-    .challenge-btn .ch-text { font-size: 12px; }
-    .challenge-btn.cooldown {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-
-    /* Floating text */
+     /* Floating text */
     .floating-text { position: absolute; color: #f59e0b; font-weight: bold; font-size: 20px; pointer-events: none; animation: floatUp 0.8s ease-out forwards; z-index: 50; text-shadow: 0 0 10px rgba(0,0,0,0.8); }
     @keyframes floatUp { 0% { opacity: 1; transform: translate(-50%, 0); } 100% { opacity: 0; transform: translate(-50%, -50px); } }
 
@@ -218,12 +185,6 @@
     <button class="control-btn" id="btn-down">▼</button>
     <button class="control-btn" id="btn-right">►</button>
   </div>
-
-  <!-- ⚔️ Challenge Button -->
-  <button class="challenge-btn" id="challenge-btn" onclick="challengeFriend()">
-    <span class="ch-icon">⚔️</span>
-    <span class="ch-text" data-i18n="challengeFriend">تحدَّ</span>
-  </button>
 
   <!-- Pause Overlay -->
   <div id="pause-overlay" class="pause-overlay">
