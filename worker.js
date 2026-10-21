@@ -1,8 +1,10 @@
 /* ==========================================
-   MHASpace Worker v5 - Economic Redesign
+   MHASpace Worker v6 - SECURED
+   Firebase + Telegram Stars + Webhook Security
    ========================================== */
 
 const FIREBASE = 'https://mhaexplorer-ac7a7-default-rtdb.europe-west1.firebasedatabase.app';
+const ALLOWED_ORIGIN = 'https://mha-explorer.mhaapp.workers.dev'; // 🛡️ تقييد CORS لنطاقك فقط
 
 const PRODUCTS = {
   'starter_pack': {
@@ -43,11 +45,7 @@ const PRODUCTS = {
   },
   'mega_pack': {
     price: 100, type: 'pack', mha: 10000,
-    buffs: {
-      magnet: 10 * 60 * 1000,
-      x5: 10 * 60 * 1000,
-      shield: 10 * 60 * 1000
-    },
+    buffs: { magnet: 10 * 60 * 1000, x5: 10 * 60 * 1000, shield: 10 * 60 * 1000 },
     title: { en: '🏆 Mega Pack', ar: '🏆 الحزمة الأسطورية' },
     desc:  { en: '+10000 MHA + ALL Buffs (10 min)', ar: '+10000 MHA + كل المزايا (10 دقائق)' }
   }
@@ -61,22 +59,25 @@ export default {
       return new Response(null, { headers: corsHeaders() });
     }
 
+    // Routes
     if (url.pathname === '/webhook' && request.method === 'POST') return handleWebhook(request, env);
     if (url.pathname === '/api/create-invoice' && request.method === 'POST') return handleCreateInvoice(request, env);
     if (url.pathname === '/api/save-score' && request.method === 'POST') return handleSaveScore(request, env);
-       if (url.pathname === '/api/products') return jsonResponse({ products: PRODUCTS });
-    if (url.pathname === '/api/health') return jsonResponse({ ok: true, hasToken: !!env.BOT_TOKEN });
+    if (url.pathname === '/api/products') return jsonResponse({ products: PRODUCTS });
+    if (url.pathname === '/api/health') return jsonResponse({ ok: true, hasToken: !!env.BOT_TOKEN, hasSecret: !!env.WEBHOOK_SECRET });
 
+    // Static assets
     if (env.ASSETS) return env.ASSETS.fetch(request);
-    return fetch(request);
+    return new Response('Not found', { status: 404 });
   }
 };
 
 function corsHeaders() {
   return {
-    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Origin': ALLOWED_ORIGIN, // 🛡️ محمي
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type'
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Vary': 'Origin'
   };
 }
 
@@ -87,15 +88,25 @@ function jsonResponse(data, status = 200) {
   });
 }
 
+// 🛡️ حماية من إعادة استخدام التوكن (Replay Attacks)
 async function validateInitData(initData, botToken) {
   try {
     const params = new URLSearchParams(initData);
     const hash = params.get('hash');
     if (!hash) return null;
+
+    // التحقق من عمر التوكن (لا يقبل أقدم من 24 ساعة)
+    const authDate = parseInt(params.get('auth_date') || '0');
+    if (Date.now() / 1000 - authDate > 86400) {
+      console.warn('⛔ Expired initData blocked');
+      return null;
+    }
+
     params.delete('hash');
     const dataCheckString = [...params.entries()]
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([k, v]) => `${k}=${v}`).join('\n');
+      
     const enc = new TextEncoder();
     const secretKey = await crypto.subtle.importKey(
       'raw', enc.encode('WebAppData'),
@@ -106,6 +117,7 @@ async function validateInitData(initData, botToken) {
       { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
     const sig = await crypto.subtle.sign('HMAC', hmacKey, enc.encode(dataCheckString));
     const hex = [...new Uint8Array(sig)].map(b => b.toString(16).padStart(2, '0')).join('');
+    
     if (hex !== hash) return null;
     return JSON.parse(params.get('user') || 'null');
   } catch (e) { return null; }
@@ -139,14 +151,23 @@ async function handleCreateInvoice(request, env) {
     });
     const data = await res.json();
     if (!data.ok) return jsonResponse({ error: data.description || 'Failed' }, 500);
+    
     return jsonResponse({ url: data.result });
   } catch (e) {
     return jsonResponse({ error: e.message }, 500);
   }
 }
 
+// 🛡️ حماية الويبهوك من الطلبات المزيفة
 async function handleWebhook(request, env) {
   try {
+    // التحقق من الـ Secret Token القادم من تيليجرام
+    const secretToken = request.headers.get('X-Telegram-Bot-Api-Secret-Token');
+    if (!env.WEBHOOK_SECRET || secretToken !== env.WEBHOOK_SECRET) {
+      console.warn('⛔ Fake webhook blocked');
+      return new Response('Unauthorized', { status: 401 });
+    }
+
     const update = await request.json();
 
     if (update.pre_checkout_query) {
@@ -181,7 +202,7 @@ async function handleWebhook(request, env) {
     }
     return new Response('OK');
   } catch (e) {
-    console.error('webhook:', e);
+    console.error('webhook error:', e);
     return new Response('OK');
   }
 }
@@ -226,14 +247,13 @@ async function applyProduct(env, userId, product, productId) {
       userId, productId, mha: product.mha, price: product.price, at: now
     })
   });
-
-  return { mha: product.mha, buffs: product.buffs };
 }
 
 async function handleSaveScore(request, env) {
   try {
     const { score: newScore, initData } = await request.json();
     const user = await validateInitData(initData, env.BOT_TOKEN);
+    
     if (!user || !user.id) return jsonResponse({ error: 'Auth failed' }, 401);
     if (typeof newScore !== 'number' || newScore < 0 || !isFinite(newScore)) {
       return jsonResponse({ error: 'Invalid score' }, 400);
@@ -242,7 +262,9 @@ async function handleSaveScore(request, env) {
     const base = `${FIREBASE}/players/${user.id}`;
     const snap = await fetch(`${base}.json`).then(r => r.json()).catch(() => null);
     const currentScore = (snap && typeof snap.score === 'number') ? snap.score : 0;
+    
     const diff = newScore - currentScore;
+    // منع القفزات الكبيرة (أكثر من 500 نقطة في الطلب الواحد)
     if (diff < -0.01 || diff > 500) {
       return jsonResponse({ error: 'Score validation failed', current: currentScore }, 400);
     }
