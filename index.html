@@ -5,7 +5,19 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>MHASpace | Deep Ocean 🦈</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<!-- 🛡️ Three.js CDN with SRI & Fallback -->
+<script 
+  src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" 
+  integrity="sha384-CI3ELBVUz9XQO+97x6nwMDPosPR5XvsxW2ua7N1Xeygeh1IxtgqtCkGfQY9WWdHu" 
+  crossorigin="anonymous">
+</script>
+<!-- 🔄 Fallback: If CDN fails, load local version -->
+<script>
+  if (typeof THREE === 'undefined') {
+    console.warn('⚠️ CDN Failed or Blocked. Loading local Three.js fallback...');
+    document.write('<script src="/three.min.js"><\/script>');
+  }
+</script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
   <link rel="manifest" href="manifest.json">
